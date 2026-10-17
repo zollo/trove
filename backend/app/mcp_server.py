@@ -11,6 +11,7 @@ any number of API replicas can serve it.
 from __future__ import annotations
 
 import contextlib
+import inspect
 import uuid
 from collections.abc import AsyncIterator
 from datetime import date
@@ -61,6 +62,17 @@ _READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False)
 _WRITE = ToolAnnotations(readOnlyHint=False, destructiveHint=False, openWorldHint=False)
 
 
+def _tool(annotations: ToolAnnotations):
+    """Register a tool, describing it with its docstring dedented the same way on every Python
+    (3.13+ dedents docstrings at compile time; 3.12 doesn't)."""
+
+    def decorator(fn):
+        description = inspect.cleandoc(fn.__doc__ or "")
+        return mcp.tool(annotations=annotations, description=description)(fn)
+
+    return decorator
+
+
 @contextlib.asynccontextmanager
 async def _session(ctx: Context) -> AsyncIterator[tuple[AsyncSession, User]]:
     """Open a DB session and resolve the calling headhunter from the HTTP headers."""
@@ -78,21 +90,21 @@ async def _session(ctx: Context) -> AsyncIterator[tuple[AsyncSession, User]]:
             raise ToolError(exc.detail) from exc
 
 
-@mcp.tool(annotations=_READ_ONLY)
+@_tool(_READ_ONLY)
 async def whoami(ctx: Context) -> UserRead:
     """The headhunter account this connection is authenticated as."""
     async with _session(ctx) as (_, user):
         return UserRead.model_validate(user)
 
 
-@mcp.tool(annotations=_READ_ONLY)
+@_tool(_READ_ONLY)
 async def list_candidates(ctx: Context) -> list[CandidateSummary]:
     """List active candidates with resume status and job counts."""
     async with _session(ctx) as (db, _):
         return await candidate_service.list_candidates(db)
 
 
-@mcp.tool(annotations=_READ_ONLY)
+@_tool(_READ_ONLY)
 async def get_candidate(candidate_id: str, ctx: Context) -> CandidateDetail:
     """A candidate's job-search preferences (titles, categories, employment types,
     locations, work modes, salary range, notes) and base-resume metadata."""
@@ -101,7 +113,7 @@ async def get_candidate(candidate_id: str, ctx: Context) -> CandidateDetail:
         return await candidate_service.get_detail(db, candidate)
 
 
-@mcp.tool(annotations=_READ_ONLY)
+@_tool(_READ_ONLY)
 async def get_base_resume(
     candidate_id: str, ctx: Context, include_file: bool = False
 ) -> DocumentContent:
@@ -113,7 +125,7 @@ async def get_base_resume(
         return document_service.to_content(doc, include_file)
 
 
-@mcp.tool(annotations=_READ_ONLY)
+@_tool(_READ_ONLY)
 async def get_job_options(ctx: Context) -> JobOptions:
     """Allowed values for job status, employment type and work mode, and the job
     categories already in use (reuse them for consistency)."""
@@ -121,7 +133,7 @@ async def get_job_options(ctx: Context) -> JobOptions:
         return await job_service.job_options(db)
 
 
-@mcp.tool(annotations=_READ_ONLY)
+@_tool(_READ_ONLY)
 async def list_jobs(
     ctx: Context,
     candidate_id: str | None = None,
@@ -135,14 +147,14 @@ async def list_jobs(
         return [JobRead.model_validate(j) for j in jobs]
 
 
-@mcp.tool(annotations=_READ_ONLY)
+@_tool(_READ_ONLY)
 async def get_job(job_id: uuid.UUID, ctx: Context) -> JobRead:
     """One job posting, including optimized-resume metadata."""
     async with _session(ctx) as (db, user):
         return JobRead.model_validate(await job_service.get_job(db, user, job_id))
 
 
-@mcp.tool(annotations=_WRITE)
+@_tool(_WRITE)
 async def create_job(
     candidate_id: uuid.UUID,
     title: str,
@@ -184,7 +196,7 @@ async def create_job(
         return JobRead.model_validate(await job_service.create_job(db, user, payload))
 
 
-@mcp.tool(annotations=_WRITE)
+@_tool(_WRITE)
 async def update_job(
     job_id: uuid.UUID,
     ctx: Context,
@@ -228,7 +240,7 @@ async def update_job(
         return JobRead.model_validate(await job_service.update_job(db, user, job_id, payload))
 
 
-@mcp.tool(annotations=_WRITE)
+@_tool(_WRITE)
 async def upload_optimized_resume(
     job_id: uuid.UUID,
     ctx: Context,
@@ -246,7 +258,7 @@ async def upload_optimized_resume(
         return DocumentRead.model_validate(doc)
 
 
-@mcp.tool(annotations=_READ_ONLY)
+@_tool(_READ_ONLY)
 async def get_optimized_resume(
     job_id: uuid.UUID, ctx: Context, include_file: bool = False
 ) -> DocumentContent:

@@ -1,0 +1,181 @@
+# Default values for the Trove chart.
+
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  # -- Backend image: serves the REST API and MCP endpoint, and runs migrations.
+  backend: ghcr.io/zollo/trove-backend
+  # -- Frontend image: the React SPA served by nginx.
+  frontend: ghcr.io/zollo/trove-frontend
+  # -- Tag for both images. Defaults to the chart appVersion (the release a
+  # published chart was cut from), or "latest" from a source checkout.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# -- Non-secret settings, rendered into a ConfigMap as environment variables
+# (see .env.example). POSTGRES_HOST/PORT/DB/USER are set by the chart from the
+# postgresql section below.
+config:
+  TROVE_ENV: production
+  # Comma-separated browser origins; set to the public URL(s), e.g. https://trove.example.com
+  CORS_ORIGINS: ""
+  # Public URL, shown on the Settings page for MCP/API setup.
+  TROVE_PUBLIC_URL: ""
+  ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
+  JWT_ALGORITHM: HS256
+  ALLOW_CANDIDATE_REGISTRATION: "true"
+  # The login form rejects special-use domains such as .local, so use a real-looking one.
+  BOOTSTRAP_HEADHUNTER_EMAIL: headhunter@example.com
+  MAX_UPLOAD_MB: "10"
+
+# -- Name of an existing Secret with the sensitive settings. Keys:
+# SECRET_KEY, POSTGRES_PASSWORD (required); BOOTSTRAP_HEADHUNTER_PASSWORD
+# (optional: if unset, a random password is generated and printed in the backend
+# log on first start). When empty the chart creates a Secret from `secrets` below.
+existingSecret: ""
+
+# -- Sensitive settings, used only when existingSecret is empty. Prefer an
+# existingSecret created out-of-band so secrets never sit in a values file.
+secrets: {}
+#  SECRET_KEY: "<openssl rand -hex 32>"
+#  POSTGRES_PASSWORD: "<openssl rand -hex 16>"
+#  BOOTSTRAP_HEADHUNTER_PASSWORD: ""
+
+backend:
+  replicaCount: 2
+  # -- Run `alembic upgrade head` in an init container before the API starts
+  # (retries while the database comes up).
+  migrate: true
+  podAnnotations: {}
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop: [ALL]
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  readinessProbe:
+    httpGet:
+      path: /api/health/ready
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 15
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  topologySpreadConstraints: []
+
+frontend:
+  replicaCount: 2
+  podAnnotations: {}
+  # nginx starts as root and drops to the nginx user, so no runAsNonRoot here.
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    allowPrivilegeEscalation: false
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+    periodSeconds: 15
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+    periodSeconds: 30
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  topologySpreadConstraints: []
+
+service:
+  backendPort: 8000
+  frontendPort: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  # -- Hostnames. Each gets /api, /mcp, /docs, /redoc, /openapi.json -> backend and
+  # everything else -> frontend.
+  hosts:
+    - trove.example.com
+  tls: []
+  #  - secretName: trove-tls
+  #    hosts: [trove.example.com]
+
+# Bundled PostgreSQL (single instance, StatefulSet + PVC). It holds all durable
+# data: users, preferences, jobs and uploaded resumes.
+postgresql:
+  enabled: true
+  image: postgres:16-alpine
+  user: trove
+  database: trove
+  persistence:
+    # -- StorageClass for the data PVC ("" = cluster default).
+    storageClass: ""
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # Nightly pg_dump (custom format) to a separate volume, e.g. an NFS-backed
+  # StorageClass, so a lost node or PVC doesn't lose the data.
+  backup:
+    enabled: false
+    schedule: "15 3 * * *"
+    # -- Number of dumps to keep.
+    keep: 14
+    persistence:
+      # -- Use an existing PVC for the dumps instead of creating one.
+      existingClaim: ""
+      storageClass: ""
+      accessModes: [ReadWriteOnce]
+      size: 5Gi
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 256Mi
+
+# Used when postgresql.enabled is false. The password is still read from the
+# Secret (POSTGRES_PASSWORD).
+externalDatabase:
+  host: ""
+  port: 5432
+  user: trove
+  database: trove
+

@@ -1,0 +1,51 @@
+# Base composition for Trove. Suitable as-is for a simple deployment.
+# For local development with hot-reload, `docker-compose.override.yml` is
+# picked up automatically and layers dev conveniences on top.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-trove}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trove}
+      POSTGRES_DB: ${POSTGRES_DB:-trove}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trove}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    # Runs DB migrations, then boots the API (REST at /api, MCP at /mcp).
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips '*'"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Empty => SPA uses relative /api, which nginx proxies to the backend.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:

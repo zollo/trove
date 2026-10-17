@@ -1,0 +1,19 @@
+Trove {{ include "trove.tag" . }} is deployed.
+{{- if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+  https://{{ . }}
+{{- end }}
+{{- else }}
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "trove.fullname" . }}-frontend 8080:{{ .Values.service.frontendPort }}
+  (the SPA calls /api on the same origin, so use an Ingress for a working setup)
+{{- end }}
+
+First login: {{ .Values.config.BOOTSTRAP_HEADHUNTER_EMAIL }} with BOOTSTRAP_HEADHUNTER_PASSWORD from
+the Secret {{ include "trove.secretName" . }} (only created when the database has no such user).
+{{- if .Values.ingress.enabled }}
+{{- range .Values.ingress.hosts }}
+
+MCP endpoint for AI headhunters: https://{{ . }}/mcp (create an API key under Settings)
+{{- end }}
+{{- end }}

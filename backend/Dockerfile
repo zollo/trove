@@ -1,0 +1,42 @@
+# ── Base ────────────────────────────────────────────────────────────────
+FROM python:3.12-slim AS base
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+# curl for the container healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python deps first for layer caching
+COPY pyproject.toml ./
+RUN pip install --upgrade pip && pip install ".[dev]"
+
+# ── Dev target (hot reload; source is bind-mounted at runtime) ───────────
+FROM base AS dev
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+# ── Prod target ─────────────────────────────────────────────────────────
+FROM base AS prod
+COPY . .
+RUN pip install "." --no-deps
+# Drop privileges
+RUN useradd -m -u 1000 appuser && chown -R appuser /app
+USER appuser
+# Build metadata (set late so it doesn't bust earlier layers). Surfaced via
+# /api/build-info.
+ARG APP_VERSION=dev
+ARG GIT_COMMIT=unknown
+ARG BUILD_TIME=unknown
+ENV TROVE_VERSION=$APP_VERSION \
+    TROVE_GIT_COMMIT=$GIT_COMMIT \
+    TROVE_BUILD_TIME=$BUILD_TIME
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -fsS http://localhost:8000/api/health || exit 1
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]

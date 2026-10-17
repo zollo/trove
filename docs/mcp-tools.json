@@ -1,0 +1,2348 @@
+{
+  "server": "trove",
+  "transport": "streamable-http",
+  "path": "/mcp",
+  "auth": "Authorization: Bearer <headhunter API key>",
+  "tools": [
+    {
+      "name": "whoami",
+      "description": "The headhunter account this connection is authenticated as.",
+      "inputSchema": {
+        "properties": {},
+        "title": "whoamiArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "UserRole": {
+            "enum": [
+              "candidate",
+              "headhunter"
+            ],
+            "title": "UserRole",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/$defs/UserRole"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "display_name",
+          "role",
+          "is_active",
+          "created_at"
+        ],
+        "title": "UserRead",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_candidates",
+      "description": "List active candidates with resume status and job counts.",
+      "inputSchema": {
+        "properties": {},
+        "title": "list_candidatesArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "CandidateSummary": {
+            "description": "A candidate as a headhunter sees them in a list.",
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "title": "Id",
+                "type": "string"
+              },
+              "email": {
+                "title": "Email",
+                "type": "string"
+              },
+              "display_name": {
+                "title": "Display Name",
+                "type": "string"
+              },
+              "is_active": {
+                "title": "Is Active",
+                "type": "boolean"
+              },
+              "headline": {
+                "default": "",
+                "title": "Headline",
+                "type": "string"
+              },
+              "has_base_resume": {
+                "default": false,
+                "title": "Has Base Resume",
+                "type": "boolean"
+              },
+              "job_count": {
+                "default": 0,
+                "title": "Job Count",
+                "type": "integer"
+              },
+              "open_job_count": {
+                "default": 0,
+                "title": "Open Job Count",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "id",
+              "email",
+              "display_name",
+              "is_active"
+            ],
+            "title": "CandidateSummary",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/CandidateSummary"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_candidatesOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_candidate",
+      "description": "A candidate's job-search preferences (titles, categories, employment types,\nlocations, work modes, salary range, notes) and base-resume metadata.",
+      "inputSchema": {
+        "properties": {
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate_id"
+        ],
+        "title": "get_candidateArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "DocumentKind": {
+            "enum": [
+              "base_resume",
+              "optimized_resume"
+            ],
+            "title": "DocumentKind",
+            "type": "string"
+          },
+          "DocumentRead": {
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "title": "Id",
+                "type": "string"
+              },
+              "kind": {
+                "$ref": "#/$defs/DocumentKind"
+              },
+              "candidate_id": {
+                "format": "uuid",
+                "title": "Candidate Id",
+                "type": "string"
+              },
+              "job_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Job Id"
+              },
+              "filename": {
+                "title": "Filename",
+                "type": "string"
+              },
+              "content_type": {
+                "title": "Content Type",
+                "type": "string"
+              },
+              "size_bytes": {
+                "title": "Size Bytes",
+                "type": "integer"
+              },
+              "created_at": {
+                "format": "date-time",
+                "title": "Created At",
+                "type": "string"
+              },
+              "updated_at": {
+                "format": "date-time",
+                "title": "Updated At",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "candidate_id",
+              "filename",
+              "content_type",
+              "size_bytes",
+              "created_at",
+              "updated_at"
+            ],
+            "title": "DocumentRead",
+            "type": "object"
+          },
+          "EmploymentType": {
+            "enum": [
+              "permanent",
+              "contract",
+              "contract_to_hire",
+              "part_time",
+              "temporary",
+              "internship",
+              "freelance",
+              "other"
+            ],
+            "title": "EmploymentType",
+            "type": "string"
+          },
+          "ProfileRead": {
+            "properties": {
+              "headline": {
+                "default": "",
+                "description": "One-line summary.",
+                "maxLength": 255,
+                "title": "Headline",
+                "type": "string"
+              },
+              "desired_titles": {
+                "description": "Job titles sought.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Desired Titles",
+                "type": "array"
+              },
+              "job_categories": {
+                "description": "e.g. Engineering.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Job Categories",
+                "type": "array"
+              },
+              "employment_types": {
+                "items": {
+                  "$ref": "#/$defs/EmploymentType"
+                },
+                "title": "Employment Types",
+                "type": "array"
+              },
+              "locations": {
+                "description": "Preferred locations.",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Locations",
+                "type": "array"
+              },
+              "work_modes": {
+                "items": {
+                  "$ref": "#/$defs/WorkMode"
+                },
+                "title": "Work Modes",
+                "type": "array"
+              },
+              "willing_to_relocate": {
+                "default": false,
+                "title": "Willing To Relocate",
+                "type": "boolean"
+              },
+              "salary_min": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Salary Min"
+              },
+              "salary_max": {
+                "anyOf": [
+                  {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Salary Max"
+              },
+              "salary_currency": {
+                "default": "USD",
+                "description": "ISO 4217 code, e.g. USD.",
+                "pattern": "^[A-Za-z]{3}$",
+                "title": "Salary Currency",
+                "type": "string"
+              },
+              "salary_period": {
+                "$ref": "#/$defs/SalaryPeriod",
+                "default": "year"
+              },
+              "notes": {
+                "default": "",
+                "description": "Must-haves, deal-breakers\u2026",
+                "maxLength": 10000,
+                "title": "Notes",
+                "type": "string"
+              },
+              "updated_at": {
+                "anyOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Updated At"
+              }
+            },
+            "title": "ProfileRead",
+            "type": "object"
+          },
+          "SalaryPeriod": {
+            "enum": [
+              "year",
+              "hour"
+            ],
+            "title": "SalaryPeriod",
+            "type": "string"
+          },
+          "WorkMode": {
+            "enum": [
+              "onsite",
+              "hybrid",
+              "remote"
+            ],
+            "title": "WorkMode",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "profile": {
+            "$ref": "#/$defs/ProfileRead"
+          },
+          "base_resume": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/DocumentRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "display_name",
+          "is_active",
+          "profile"
+        ],
+        "title": "CandidateDetail",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_base_resume",
+      "description": "Download a candidate's base resume. Returns extracted plain text in\ntext_content; set include_file=true to also get the original file as base64.",
+      "inputSchema": {
+        "properties": {
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "include_file": {
+            "default": false,
+            "title": "Include File",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "candidate_id"
+        ],
+        "title": "get_base_resumeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "DocumentKind": {
+            "enum": [
+              "base_resume",
+              "optimized_resume"
+            ],
+            "title": "DocumentKind",
+            "type": "string"
+          }
+        },
+        "description": "Metadata plus the extracted text (and optionally the raw file, base64).",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/$defs/DocumentKind"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Job Id"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "text_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Text Content"
+          },
+          "content_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Content Base64"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "candidate_id",
+          "filename",
+          "content_type",
+          "size_bytes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DocumentContent",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_job_options",
+      "description": "Allowed values for job status, employment type and work mode, and the job\ncategories already in use (reuse them for consistency).",
+      "inputSchema": {
+        "properties": {},
+        "title": "get_job_optionsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "Option": {
+            "properties": {
+              "value": {
+                "title": "Value",
+                "type": "string"
+              },
+              "label": {
+                "title": "Label",
+                "type": "string"
+              }
+            },
+            "required": [
+              "value",
+              "label"
+            ],
+            "title": "Option",
+            "type": "object"
+          }
+        },
+        "properties": {
+          "statuses": {
+            "items": {
+              "$ref": "#/$defs/Option"
+            },
+            "title": "Statuses",
+            "type": "array"
+          },
+          "employment_types": {
+            "items": {
+              "$ref": "#/$defs/Option"
+            },
+            "title": "Employment Types",
+            "type": "array"
+          },
+          "work_modes": {
+            "items": {
+              "$ref": "#/$defs/Option"
+            },
+            "title": "Work Modes",
+            "type": "array"
+          },
+          "salary_periods": {
+            "items": {
+              "$ref": "#/$defs/Option"
+            },
+            "title": "Salary Periods",
+            "type": "array"
+          },
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          }
+        },
+        "required": [
+          "statuses",
+          "employment_types",
+          "work_modes",
+          "salary_periods",
+          "categories"
+        ],
+        "title": "JobOptions",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "list_jobs",
+      "description": "List job postings, optionally for one candidate, filtered by status or a\nsearch string matched against title, company, location and category.",
+      "inputSchema": {
+        "$defs": {
+          "JobStatus": {
+            "enum": [
+              "new",
+              "interested",
+              "applied",
+              "interviewing",
+              "offer",
+              "rejected",
+              "not_interested",
+              "expired",
+              "unavailable"
+            ],
+            "title": "JobStatus",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "candidate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Candidate Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/$defs/JobStatus"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Q"
+          }
+        },
+        "title": "list_jobsArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "DocumentKind": {
+            "enum": [
+              "base_resume",
+              "optimized_resume"
+            ],
+            "title": "DocumentKind",
+            "type": "string"
+          },
+          "DocumentRead": {
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "title": "Id",
+                "type": "string"
+              },
+              "kind": {
+                "$ref": "#/$defs/DocumentKind"
+              },
+              "candidate_id": {
+                "format": "uuid",
+                "title": "Candidate Id",
+                "type": "string"
+              },
+              "job_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Job Id"
+              },
+              "filename": {
+                "title": "Filename",
+                "type": "string"
+              },
+              "content_type": {
+                "title": "Content Type",
+                "type": "string"
+              },
+              "size_bytes": {
+                "title": "Size Bytes",
+                "type": "integer"
+              },
+              "created_at": {
+                "format": "date-time",
+                "title": "Created At",
+                "type": "string"
+              },
+              "updated_at": {
+                "format": "date-time",
+                "title": "Updated At",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "candidate_id",
+              "filename",
+              "content_type",
+              "size_bytes",
+              "created_at",
+              "updated_at"
+            ],
+            "title": "DocumentRead",
+            "type": "object"
+          },
+          "EmploymentType": {
+            "enum": [
+              "permanent",
+              "contract",
+              "contract_to_hire",
+              "part_time",
+              "temporary",
+              "internship",
+              "freelance",
+              "other"
+            ],
+            "title": "EmploymentType",
+            "type": "string"
+          },
+          "JobRead": {
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "title": "Id",
+                "type": "string"
+              },
+              "candidate_id": {
+                "format": "uuid",
+                "title": "Candidate Id",
+                "type": "string"
+              },
+              "candidate_name": {
+                "default": "",
+                "title": "Candidate Name",
+                "type": "string"
+              },
+              "title": {
+                "title": "Title",
+                "type": "string"
+              },
+              "company": {
+                "title": "Company",
+                "type": "string"
+              },
+              "apply_url": {
+                "title": "Apply Url",
+                "type": "string"
+              },
+              "status": {
+                "$ref": "#/$defs/JobStatus"
+              },
+              "category": {
+                "title": "Category",
+                "type": "string"
+              },
+              "employment_type": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/EmploymentType"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "location": {
+                "title": "Location",
+                "type": "string"
+              },
+              "work_mode": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/WorkMode"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "compensation": {
+                "title": "Compensation",
+                "type": "string"
+              },
+              "date_found": {
+                "format": "date",
+                "title": "Date Found",
+                "type": "string"
+              },
+              "schedule": {
+                "title": "Schedule",
+                "type": "string"
+              },
+              "fit_score": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Fit Score"
+              },
+              "notes": {
+                "title": "Notes",
+                "type": "string"
+              },
+              "optimized_resume": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/DocumentRead"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null
+              },
+              "created_at": {
+                "format": "date-time",
+                "title": "Created At",
+                "type": "string"
+              },
+              "updated_at": {
+                "format": "date-time",
+                "title": "Updated At",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "candidate_id",
+              "title",
+              "company",
+              "apply_url",
+              "status",
+              "category",
+              "employment_type",
+              "location",
+              "work_mode",
+              "compensation",
+              "date_found",
+              "schedule",
+              "fit_score",
+              "notes",
+              "created_at",
+              "updated_at"
+            ],
+            "title": "JobRead",
+            "type": "object"
+          },
+          "JobStatus": {
+            "enum": [
+              "new",
+              "interested",
+              "applied",
+              "interviewing",
+              "offer",
+              "rejected",
+              "not_interested",
+              "expired",
+              "unavailable"
+            ],
+            "title": "JobStatus",
+            "type": "string"
+          },
+          "WorkMode": {
+            "enum": [
+              "onsite",
+              "hybrid",
+              "remote"
+            ],
+            "title": "WorkMode",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "result": {
+            "items": {
+              "$ref": "#/$defs/JobRead"
+            },
+            "title": "Result",
+            "type": "array"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "list_jobsOutput",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_job",
+      "description": "One job posting, including optimized-resume metadata.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "title": "get_jobArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "DocumentKind": {
+            "enum": [
+              "base_resume",
+              "optimized_resume"
+            ],
+            "title": "DocumentKind",
+            "type": "string"
+          },
+          "DocumentRead": {
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "title": "Id",
+                "type": "string"
+              },
+              "kind": {
+                "$ref": "#/$defs/DocumentKind"
+              },
+              "candidate_id": {
+                "format": "uuid",
+                "title": "Candidate Id",
+                "type": "string"
+              },
+              "job_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Job Id"
+              },
+              "filename": {
+                "title": "Filename",
+                "type": "string"
+              },
+              "content_type": {
+                "title": "Content Type",
+                "type": "string"
+              },
+              "size_bytes": {
+                "title": "Size Bytes",
+                "type": "integer"
+              },
+              "created_at": {
+                "format": "date-time",
+                "title": "Created At",
+                "type": "string"
+              },
+              "updated_at": {
+                "format": "date-time",
+                "title": "Updated At",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "candidate_id",
+              "filename",
+              "content_type",
+              "size_bytes",
+              "created_at",
+              "updated_at"
+            ],
+            "title": "DocumentRead",
+            "type": "object"
+          },
+          "EmploymentType": {
+            "enum": [
+              "permanent",
+              "contract",
+              "contract_to_hire",
+              "part_time",
+              "temporary",
+              "internship",
+              "freelance",
+              "other"
+            ],
+            "title": "EmploymentType",
+            "type": "string"
+          },
+          "JobStatus": {
+            "enum": [
+              "new",
+              "interested",
+              "applied",
+              "interviewing",
+              "offer",
+              "rejected",
+              "not_interested",
+              "expired",
+              "unavailable"
+            ],
+            "title": "JobStatus",
+            "type": "string"
+          },
+          "WorkMode": {
+            "enum": [
+              "onsite",
+              "hybrid",
+              "remote"
+            ],
+            "title": "WorkMode",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "candidate_name": {
+            "default": "",
+            "title": "Candidate Name",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "apply_url": {
+            "title": "Apply Url",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/$defs/JobStatus"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "employment_type": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "work_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/WorkMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "compensation": {
+            "title": "Compensation",
+            "type": "string"
+          },
+          "date_found": {
+            "format": "date",
+            "title": "Date Found",
+            "type": "string"
+          },
+          "schedule": {
+            "title": "Schedule",
+            "type": "string"
+          },
+          "fit_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fit Score"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "string"
+          },
+          "optimized_resume": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/DocumentRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "candidate_id",
+          "title",
+          "company",
+          "apply_url",
+          "status",
+          "category",
+          "employment_type",
+          "location",
+          "work_mode",
+          "compensation",
+          "date_found",
+          "schedule",
+          "fit_score",
+          "notes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "JobRead",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "create_job",
+      "description": "Post a job opening for a candidate. fit_score is 1 (poor) to 5 (excellent);\nexplain the score in notes. date_found defaults to today. Fails if the\ncandidate already has a job with the same apply_url.",
+      "inputSchema": {
+        "$defs": {
+          "EmploymentType": {
+            "enum": [
+              "permanent",
+              "contract",
+              "contract_to_hire",
+              "part_time",
+              "temporary",
+              "internship",
+              "freelance",
+              "other"
+            ],
+            "title": "EmploymentType",
+            "type": "string"
+          },
+          "JobStatus": {
+            "enum": [
+              "new",
+              "interested",
+              "applied",
+              "interviewing",
+              "offer",
+              "rejected",
+              "not_interested",
+              "expired",
+              "unavailable"
+            ],
+            "title": "JobStatus",
+            "type": "string"
+          },
+          "WorkMode": {
+            "enum": [
+              "onsite",
+              "hybrid",
+              "remote"
+            ],
+            "title": "WorkMode",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "apply_url": {
+            "title": "Apply Url",
+            "type": "string"
+          },
+          "company": {
+            "default": "",
+            "title": "Company",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/$defs/JobStatus",
+            "default": "new"
+          },
+          "category": {
+            "default": "",
+            "title": "Category",
+            "type": "string"
+          },
+          "employment_type": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "location": {
+            "default": "",
+            "title": "Location",
+            "type": "string"
+          },
+          "work_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/WorkMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "compensation": {
+            "default": "",
+            "title": "Compensation",
+            "type": "string"
+          },
+          "date_found": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Date Found"
+          },
+          "schedule": {
+            "default": "",
+            "title": "Schedule",
+            "type": "string"
+          },
+          "fit_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fit Score"
+          },
+          "notes": {
+            "default": "",
+            "title": "Notes",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "title",
+          "apply_url"
+        ],
+        "title": "create_jobArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "DocumentKind": {
+            "enum": [
+              "base_resume",
+              "optimized_resume"
+            ],
+            "title": "DocumentKind",
+            "type": "string"
+          },
+          "DocumentRead": {
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "title": "Id",
+                "type": "string"
+              },
+              "kind": {
+                "$ref": "#/$defs/DocumentKind"
+              },
+              "candidate_id": {
+                "format": "uuid",
+                "title": "Candidate Id",
+                "type": "string"
+              },
+              "job_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Job Id"
+              },
+              "filename": {
+                "title": "Filename",
+                "type": "string"
+              },
+              "content_type": {
+                "title": "Content Type",
+                "type": "string"
+              },
+              "size_bytes": {
+                "title": "Size Bytes",
+                "type": "integer"
+              },
+              "created_at": {
+                "format": "date-time",
+                "title": "Created At",
+                "type": "string"
+              },
+              "updated_at": {
+                "format": "date-time",
+                "title": "Updated At",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "candidate_id",
+              "filename",
+              "content_type",
+              "size_bytes",
+              "created_at",
+              "updated_at"
+            ],
+            "title": "DocumentRead",
+            "type": "object"
+          },
+          "EmploymentType": {
+            "enum": [
+              "permanent",
+              "contract",
+              "contract_to_hire",
+              "part_time",
+              "temporary",
+              "internship",
+              "freelance",
+              "other"
+            ],
+            "title": "EmploymentType",
+            "type": "string"
+          },
+          "JobStatus": {
+            "enum": [
+              "new",
+              "interested",
+              "applied",
+              "interviewing",
+              "offer",
+              "rejected",
+              "not_interested",
+              "expired",
+              "unavailable"
+            ],
+            "title": "JobStatus",
+            "type": "string"
+          },
+          "WorkMode": {
+            "enum": [
+              "onsite",
+              "hybrid",
+              "remote"
+            ],
+            "title": "WorkMode",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "candidate_name": {
+            "default": "",
+            "title": "Candidate Name",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "apply_url": {
+            "title": "Apply Url",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/$defs/JobStatus"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "employment_type": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "work_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/WorkMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "compensation": {
+            "title": "Compensation",
+            "type": "string"
+          },
+          "date_found": {
+            "format": "date",
+            "title": "Date Found",
+            "type": "string"
+          },
+          "schedule": {
+            "title": "Schedule",
+            "type": "string"
+          },
+          "fit_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fit Score"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "string"
+          },
+          "optimized_resume": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/DocumentRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "candidate_id",
+          "title",
+          "company",
+          "apply_url",
+          "status",
+          "category",
+          "employment_type",
+          "location",
+          "work_mode",
+          "compensation",
+          "date_found",
+          "schedule",
+          "fit_score",
+          "notes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "JobRead",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "update_job",
+      "description": "Change a job posting. Only the fields you pass are updated; e.g. set\nstatus to \"expired\" or \"unavailable\" when the posting closes.",
+      "inputSchema": {
+        "$defs": {
+          "EmploymentType": {
+            "enum": [
+              "permanent",
+              "contract",
+              "contract_to_hire",
+              "part_time",
+              "temporary",
+              "internship",
+              "freelance",
+              "other"
+            ],
+            "title": "EmploymentType",
+            "type": "string"
+          },
+          "JobStatus": {
+            "enum": [
+              "new",
+              "interested",
+              "applied",
+              "interviewing",
+              "offer",
+              "rejected",
+              "not_interested",
+              "expired",
+              "unavailable"
+            ],
+            "title": "JobStatus",
+            "type": "string"
+          },
+          "WorkMode": {
+            "enum": [
+              "onsite",
+              "hybrid",
+              "remote"
+            ],
+            "title": "WorkMode",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Title"
+          },
+          "apply_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Apply Url"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Company"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/JobStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Category"
+          },
+          "employment_type": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Location"
+          },
+          "work_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/WorkMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "compensation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Compensation"
+          },
+          "date_found": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Date Found"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Schedule"
+          },
+          "fit_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fit Score"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "title": "update_jobArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "DocumentKind": {
+            "enum": [
+              "base_resume",
+              "optimized_resume"
+            ],
+            "title": "DocumentKind",
+            "type": "string"
+          },
+          "DocumentRead": {
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "title": "Id",
+                "type": "string"
+              },
+              "kind": {
+                "$ref": "#/$defs/DocumentKind"
+              },
+              "candidate_id": {
+                "format": "uuid",
+                "title": "Candidate Id",
+                "type": "string"
+              },
+              "job_id": {
+                "anyOf": [
+                  {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "default": null,
+                "title": "Job Id"
+              },
+              "filename": {
+                "title": "Filename",
+                "type": "string"
+              },
+              "content_type": {
+                "title": "Content Type",
+                "type": "string"
+              },
+              "size_bytes": {
+                "title": "Size Bytes",
+                "type": "integer"
+              },
+              "created_at": {
+                "format": "date-time",
+                "title": "Created At",
+                "type": "string"
+              },
+              "updated_at": {
+                "format": "date-time",
+                "title": "Updated At",
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "candidate_id",
+              "filename",
+              "content_type",
+              "size_bytes",
+              "created_at",
+              "updated_at"
+            ],
+            "title": "DocumentRead",
+            "type": "object"
+          },
+          "EmploymentType": {
+            "enum": [
+              "permanent",
+              "contract",
+              "contract_to_hire",
+              "part_time",
+              "temporary",
+              "internship",
+              "freelance",
+              "other"
+            ],
+            "title": "EmploymentType",
+            "type": "string"
+          },
+          "JobStatus": {
+            "enum": [
+              "new",
+              "interested",
+              "applied",
+              "interviewing",
+              "offer",
+              "rejected",
+              "not_interested",
+              "expired",
+              "unavailable"
+            ],
+            "title": "JobStatus",
+            "type": "string"
+          },
+          "WorkMode": {
+            "enum": [
+              "onsite",
+              "hybrid",
+              "remote"
+            ],
+            "title": "WorkMode",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "candidate_name": {
+            "default": "",
+            "title": "Candidate Name",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "apply_url": {
+            "title": "Apply Url",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/$defs/JobStatus"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "employment_type": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/EmploymentType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "work_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/WorkMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "compensation": {
+            "title": "Compensation",
+            "type": "string"
+          },
+          "date_found": {
+            "format": "date",
+            "title": "Date Found",
+            "type": "string"
+          },
+          "schedule": {
+            "title": "Schedule",
+            "type": "string"
+          },
+          "fit_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fit Score"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "string"
+          },
+          "optimized_resume": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/DocumentRead"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "candidate_id",
+          "title",
+          "company",
+          "apply_url",
+          "status",
+          "category",
+          "employment_type",
+          "location",
+          "work_mode",
+          "compensation",
+          "date_found",
+          "schedule",
+          "fit_score",
+          "notes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "JobRead",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "upload_optimized_resume",
+      "description": "Attach a resume rewritten for this specific job, replacing any earlier one.\nPass Markdown/plain text in content_text, or a PDF/DOCX file in content_base64\n(with a matching filename extension).",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "filename": {
+            "default": "optimized-resume.md",
+            "title": "Filename",
+            "type": "string"
+          },
+          "content_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Content Text"
+          },
+          "content_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Content Base64"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "title": "upload_optimized_resumeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "DocumentKind": {
+            "enum": [
+              "base_resume",
+              "optimized_resume"
+            ],
+            "title": "DocumentKind",
+            "type": "string"
+          }
+        },
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/$defs/DocumentKind"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Job Id"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "candidate_id",
+          "filename",
+          "content_type",
+          "size_bytes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DocumentRead",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "get_optimized_resume",
+      "description": "The optimized resume attached to a job, as extracted text (and base64 file\nif include_file=true).",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "include_file": {
+            "default": false,
+            "title": "Include File",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "title": "get_optimized_resumeArguments",
+        "type": "object"
+      },
+      "outputSchema": {
+        "$defs": {
+          "DocumentKind": {
+            "enum": [
+              "base_resume",
+              "optimized_resume"
+            ],
+            "title": "DocumentKind",
+            "type": "string"
+          }
+        },
+        "description": "Metadata plus the extracted text (and optionally the raw file, base64).",
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/$defs/DocumentKind"
+          },
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Job Id"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "content_type": {
+            "title": "Content Type",
+            "type": "string"
+          },
+          "size_bytes": {
+            "title": "Size Bytes",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "text_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Text Content"
+          },
+          "content_base64": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Content Base64"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "candidate_id",
+          "filename",
+          "content_type",
+          "size_bytes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DocumentContent",
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false
+      }
+    }
+  ]
+}

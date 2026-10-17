@@ -35,6 +35,8 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# `pip install .` leaves a build/ copy of the package behind.
+extend-exclude = ["build"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

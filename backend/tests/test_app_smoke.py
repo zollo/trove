@@ -31,3 +31,14 @@ def test_every_mcp_tool_has_a_rest_operation():
     names = {t.name for t in tools}
     assert names, "no MCP tools registered"
     assert names <= operation_ids, f"MCP tools without a REST twin: {names - operation_ids}"
+
+
+def test_production_refuses_placeholder_secret():
+    import pytest
+    from pydantic import ValidationError
+
+    from app.config import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(TROVE_ENV="production", SECRET_KEY="change-me")
+    assert Settings(TROVE_ENV="production", SECRET_KEY="x" * 64).env == "production"

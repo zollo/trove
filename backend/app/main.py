@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import secrets
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -37,14 +38,23 @@ async def _bootstrap_headhunter() -> None:
     async with AsyncSessionLocal() as db:
         if await user_service.get_by_email(db, settings.bootstrap_headhunter_email):
             return
+        password = settings.bootstrap_headhunter_password or secrets.token_urlsafe(12)
         await user_service.create_user(
             db,
             email=settings.bootstrap_headhunter_email,
-            password=settings.bootstrap_headhunter_password,
+            password=password,
             display_name="Headhunter",
             role=UserRole.headhunter,
         )
-        logger.info("Bootstrapped headhunter %s", settings.bootstrap_headhunter_email)
+        if settings.bootstrap_headhunter_password:
+            logger.info("Bootstrapped headhunter %s", settings.bootstrap_headhunter_email)
+        else:
+            logger.warning(
+                "Bootstrapped headhunter %s with generated password %s "
+                "(set BOOTSTRAP_HEADHUNTER_PASSWORD to choose one)",
+                settings.bootstrap_headhunter_email,
+                password,
+            )
 
 
 @asynccontextmanager

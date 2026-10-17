@@ -332,8 +332,8 @@
               },
               "salary_currency": {
                 "default": "USD",
-                "maxLength": 8,
-                "minLength": 3,
+                "description": "ISO 4217 code, e.g. USD.",
+                "pattern": "^[A-Za-z]{3}$",
                 "title": "Salary Currency",
                 "type": "string"
               },

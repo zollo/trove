@@ -6,7 +6,7 @@ import uuid
 from datetime import date
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy import Date, ForeignKey, Integer, String, Text, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -50,6 +50,10 @@ class WorkMode(enum.StrEnum):
 
 class Job(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "jobs"
+    # One posting per apply link per candidate (create_job reports duplicates).
+    __table_args__ = (
+        UniqueConstraint("candidate_id", "apply_url", name="uq_jobs_candidate_apply_url"),
+    )
 
     candidate_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False

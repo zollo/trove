@@ -61,12 +61,18 @@ export function formatBytes(n: number): string {
 }
 
 export function formatSalary(p: Pick<Profile, "salary_min" | "salary_max" | "salary_currency" | "salary_period">): string {
-  const fmt = (n: number) =>
-    new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: p.salary_currency || "USD",
-      maximumFractionDigits: 0,
-    }).format(n);
+  const fmt = (n: number) => {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: p.salary_currency || "USD",
+        maximumFractionDigits: 0,
+      }).format(n);
+    } catch {
+      // Unknown currency code: show the number with the code instead of crashing.
+      return `${n.toLocaleString()} ${p.salary_currency}`;
+    }
+  };
   const per = p.salary_period === "hour" ? "/hr" : "/yr";
   if (p.salary_min != null && p.salary_max != null) return `${fmt(p.salary_min)}–${fmt(p.salary_max)}${per}`;
   if (p.salary_min != null) return `${fmt(p.salary_min)}+${per}`;

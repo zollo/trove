@@ -41,7 +41,8 @@ export default function JobDetail() {
     try {
       const updated = await api.patch<Job>(`/api/jobs/${id}`, body);
       setJob(updated);
-      setNotes(updated.notes);
+      // Keep an unsaved notes draft when only the status changed.
+      if ("notes" in body) setNotes(updated.notes);
       setSaved(message);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Save failed");

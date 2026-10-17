@@ -3,8 +3,16 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Placeholder signing keys shipped in examples; refused in production.
+_PLACEHOLDER_SECRETS = {
+    "",
+    "change-me",
+    "change-me-to-a-long-random-string",
+    "CHANGE_ME_openssl_rand_hex_32",
+}
 
 
 class Settings(BaseSettings):
@@ -40,16 +48,21 @@ class Settings(BaseSettings):
         default=True, alias="ALLOW_CANDIDATE_REGISTRATION"
     )
 
-    # Bootstrap headhunter (created on startup if it does not exist)
+    # Bootstrap headhunter (created on startup if it does not exist). With no
+    # password configured, a random one is generated and logged once.
     bootstrap_headhunter_email: str = Field(
         default="headhunter@example.com", alias="BOOTSTRAP_HEADHUNTER_EMAIL"
     )
-    bootstrap_headhunter_password: str = Field(
-        default="change-me-please", alias="BOOTSTRAP_HEADHUNTER_PASSWORD"
-    )
+    bootstrap_headhunter_password: str = Field(default="", alias="BOOTSTRAP_HEADHUNTER_PASSWORD")
 
     # Uploads
     max_upload_mb: int = Field(default=10, alias="MAX_UPLOAD_MB")
+
+    @model_validator(mode="after")
+    def _require_real_secret(self) -> Settings:
+        if self.env == "production" and self.secret_key.strip() in _PLACEHOLDER_SECRETS:
+            raise ValueError("SECRET_KEY must be set to a random value in production")
+        return self
 
     @computed_field  # type: ignore[prop-decorator]
     @property

@@ -30,7 +30,9 @@ class ProfileBase(BaseModel):
     willing_to_relocate: bool = False
     salary_min: int | None = Field(default=None, ge=0)
     salary_max: int | None = Field(default=None, ge=0)
-    salary_currency: str = Field(default="USD", min_length=3, max_length=8)
+    salary_currency: str = Field(
+        default="USD", pattern=r"^[A-Za-z]{3}$", description="ISO 4217 code, e.g. USD."
+    )
     salary_period: SalaryPeriod = SalaryPeriod.year
     notes: str = Field(default="", max_length=10000, description="Must-haves, deal-breakers…")
 

@@ -1,30 +1,33 @@
 import { useState, type KeyboardEvent } from "react";
 
-// A list-of-strings editor: type a value and press Enter (or comma) to add it.
+// A list-of-strings editor: type a value and press Enter (or comma, unless
+// commaSeparates is false, e.g. for "Denver, CO") to add it.
 export default function ChipInput({
   values,
   onChange,
   placeholder,
   suggestions = [],
   id,
+  commaSeparates = true,
 }: {
   values: string[];
   onChange: (values: string[]) => void;
   placeholder?: string;
   suggestions?: string[];
   id?: string;
+  commaSeparates?: boolean;
 }) {
   const [draft, setDraft] = useState("");
   const listId = id ? `${id}-suggestions` : undefined;
 
   const add = (raw: string) => {
-    const v = raw.trim().replace(/,$/, "").trim();
+    const v = (commaSeparates ? raw.trim().replace(/,$/, "") : raw).trim();
     if (v && !values.includes(v)) onChange([...values, v]);
     setDraft("");
   };
 
   const onKey = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
+    if (e.key === "Enter" || (commaSeparates && e.key === ",")) {
       e.preventDefault();
       add(draft);
     } else if (e.key === "Backspace" && !draft && values.length) {

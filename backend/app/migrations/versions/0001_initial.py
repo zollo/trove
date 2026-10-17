@@ -81,7 +81,8 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['candidate_id'], ['users.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['created_by_id'], ['users.id'], ondelete='SET NULL'),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('candidate_id', 'apply_url', name='uq_jobs_candidate_apply_url')
     )
     op.create_index(op.f('ix_jobs_candidate_id'), 'jobs', ['candidate_id'], unique=False)
     op.create_index(op.f('ix_jobs_status'), 'jobs', ['status'], unique=False)
@@ -105,11 +106,15 @@ def upgrade() -> None:
     sa.UniqueConstraint('job_id')
     )
     op.create_index(op.f('ix_documents_candidate_id'), 'documents', ['candidate_id'], unique=False)
+    op.create_index('uq_documents_base_resume', 'documents', ['candidate_id'], unique=True,
+                    postgresql_where=sa.text("kind = 'base_resume'"),
+                    sqlite_where=sa.text("kind = 'base_resume'"))
 
 
 
 def downgrade() -> None:
     
+    op.drop_index('uq_documents_base_resume', table_name='documents')
     op.drop_index(op.f('ix_documents_candidate_id'), table_name='documents')
     op.drop_table('documents')
     op.drop_index(op.f('ix_jobs_status'), table_name='jobs')

@@ -141,6 +141,7 @@ export default function Profile() {
             values={profile.locations}
             onChange={(v) => set("locations", v)}
             placeholder="e.g. Denver, CO"
+            commaSeparates={false}
           />
         </div>
 
@@ -188,7 +189,7 @@ export default function Profile() {
             />
             <input
               type="text"
-              maxLength={8}
+              maxLength={3}
               aria-label="Currency"
               placeholder="Currency"
               value={profile.salary_currency}

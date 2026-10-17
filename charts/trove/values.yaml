@@ -19,7 +19,7 @@ imagePullSecrets: []
 # (see .env.example). POSTGRES_HOST/PORT/DB/USER are set by the chart from the
 # postgresql section below.
 config:
-  AZUREGOS_ENV: production
+  TROVE_ENV: production
   # Comma-separated browser origins; set to the public URL(s), e.g. https://trove.example.com
   CORS_ORIGINS: ""
   # Public URL, shown on the Settings page for MCP/API setup.
@@ -33,7 +33,8 @@ config:
 
 # -- Name of an existing Secret with the sensitive settings. Keys:
 # SECRET_KEY, POSTGRES_PASSWORD (required); BOOTSTRAP_HEADHUNTER_PASSWORD
-# (optional). When empty the chart creates a Secret from `secrets` below.
+# (optional: if unset, a random password is generated and printed in the backend
+# log on first start). When empty the chart creates a Secret from `secrets` below.
 existingSecret: ""
 
 # -- Sensitive settings, used only when existingSecret is empty. Prefer an

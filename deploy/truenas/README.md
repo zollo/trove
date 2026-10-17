@@ -27,8 +27,9 @@ Every setting — **including all secrets** (`SECRET_KEY`, `POSTGRES_PASSWORD`,
 file next to `docker-compose.yml` (Dockge / `docker compose`), the shell, or the
 TrueNAS Custom App *Environment Variables* section.
 
-The stack ships with insecure placeholder defaults so it boots with zero config —
-**override the secrets before any real use**:
+`SECRET_KEY` is required: the stack refuses to start without it. If you leave
+`BOOTSTRAP_HEADHUNTER_PASSWORD` blank, a random password is generated on first
+start and printed in the backend log (`docker logs trove-backend`).
 
 ```bash
 cp .env.example .env
@@ -55,8 +56,8 @@ section.
 
 ## 4. First login
 
-Open `http://<truenas-ip>:30081` and sign in with `BOOTSTRAP_HEADHUNTER_EMAIL` /
-`BOOTSTRAP_HEADHUNTER_PASSWORD`. Candidates can register themselves from the
+Open `http://<truenas-ip>:30081` and sign in with `BOOTSTRAP_HEADHUNTER_EMAIL` and
+`BOOTSTRAP_HEADHUNTER_PASSWORD` (or the generated password from the backend log). Candidates can register themselves from the
 login page (turn that off with `ALLOW_CANDIDATE_REGISTRATION=false`). Create an
 API key under **Settings** to connect an AI headhunter over MCP.
 

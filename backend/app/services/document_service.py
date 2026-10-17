@@ -5,12 +5,13 @@ import base64
 import binascii
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import undefer
 
 from app.config import settings
 from app.core import resume_text
-from app.core.errors import Invalid, NotFound, TooLarge
+from app.core.errors import Conflict, Invalid, NotFound, TooLarge
 from app.models.document import Document, DocumentKind
 from app.models.job import Job
 from app.models.user import User
@@ -71,7 +72,12 @@ async def _store(
     doc.uploaded_by_id = uploader.id
     if existing is None:
         db.add(doc)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        # A concurrent upload created the resume first.
+        await db.rollback()
+        raise Conflict("Another upload of this resume just finished; try again") from exc
     await db.refresh(doc)
     return doc
 

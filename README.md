@@ -183,13 +183,13 @@ All settings are environment variables; see [`.env.example`](.env.example).
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `SECRET_KEY` | `change-me` | Signs session tokens. **Set a long random value.** |
+| `SECRET_KEY` | `change-me` | Signs session tokens. **Set a long random value**; with `TROVE_ENV=production` the backend refuses to start on a placeholder. |
 | `POSTGRES_*` / `DATABASE_URL` | `trove` / derived | Database connection |
 | `CORS_ORIGINS` | `http://localhost:5173` | Browser origins allowed to call the API cross-origin |
 | `TROVE_PUBLIC_URL` | `http://localhost:8080` | Public URL, shown in Settings for MCP/API setup |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` | Web session lifetime (API keys don't expire; revoke them) |
 | `ALLOW_CANDIDATE_REGISTRATION` | `true` | Show self-service sign-up for candidates |
-| `BOOTSTRAP_HEADHUNTER_EMAIL` / `_PASSWORD` | `headhunter@example.com` / `change-me-please` | First headhunter, created if missing |
+| `BOOTSTRAP_HEADHUNTER_EMAIL` / `_PASSWORD` | `headhunter@example.com` / generated | First headhunter, created if missing. With no password set, a random one is printed in the backend log on first start. |
 | `MAX_UPLOAD_MB` | `10` | Resume size limit |
 
 ## Deploying to TrueNAS SCALE

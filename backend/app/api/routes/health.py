@@ -1,7 +1,7 @@
 """Liveness/readiness endpoints and build info."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,13 +21,14 @@ async def health() -> dict:
 
 
 @router.get("/health/ready", operation_id="readiness")
-async def readiness(db: AsyncSession = Depends(get_db)) -> dict:
-    """Readiness — checks the database."""
+async def readiness(response: Response, db: AsyncSession = Depends(get_db)) -> dict:
+    """Readiness — checks the database; 503 when it is unreachable."""
     db_ok = True
     try:
         await db.execute(text("SELECT 1"))
     except Exception:
         db_ok = False
+        response.status_code = 503
     return {"database": db_ok}
 
 

@@ -41,12 +41,12 @@ services:
     restart: unless-stopped
     # Every value below is a plain environment variable you can override from any
     # source: a .env file (Dockge / `docker compose`), the shell, or the TrueNAS
-    # Custom App "Environment Variables" section. The secrets have insecure
-    # placeholder defaults so the stack boots out of the box — CHANGE THEM before
-    # any real use (see .env.example / README).
+    # Custom App "Environment Variables" section. SECRET_KEY is required; leave
+    # BOOTSTRAP_HEADHUNTER_PASSWORD blank to have one generated and printed in
+    # the backend log on first start (see .env.example / README).
     environment:
       TROVE_ENV: production
-      SECRET_KEY: ${SECRET_KEY:-CHANGE_ME_openssl_rand_hex_32}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY, e.g. openssl rand -hex 32}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
       POSTGRES_USER: ${POSTGRES_USER:-trove}
@@ -57,7 +57,7 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
       ALLOW_CANDIDATE_REGISTRATION: ${ALLOW_CANDIDATE_REGISTRATION:-true}
       BOOTSTRAP_HEADHUNTER_EMAIL: ${BOOTSTRAP_HEADHUNTER_EMAIL:-headhunter@example.com}
-      BOOTSTRAP_HEADHUNTER_PASSWORD: ${BOOTSTRAP_HEADHUNTER_PASSWORD:-change-me-please}
+      BOOTSTRAP_HEADHUNTER_PASSWORD: ${BOOTSTRAP_HEADHUNTER_PASSWORD:-}
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
     depends_on:
       postgres:

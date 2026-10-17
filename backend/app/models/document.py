@@ -9,7 +9,7 @@ import enum
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, LargeBinary, String, Text, Uuid
+from sqlalchemy import ForeignKey, Index, Integer, LargeBinary, String, Text, Uuid, text
 from sqlalchemy.orm import Mapped, deferred, mapped_column, relationship
 
 from app.db import Base
@@ -26,6 +26,16 @@ class DocumentKind(enum.StrEnum):
 
 class Document(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "documents"
+    # At most one base resume per candidate.
+    __table_args__ = (
+        Index(
+            "uq_documents_base_resume",
+            "candidate_id",
+            unique=True,
+            postgresql_where=text("kind = 'base_resume'"),
+            sqlite_where=text("kind = 'base_resume'"),
+        ),
+    )
 
     kind: Mapped[DocumentKind] = mapped_column(
         str_enum(DocumentKind, "document_kind"), nullable=False

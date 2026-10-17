@@ -5,6 +5,7 @@ import uuid
 from datetime import date
 
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import Conflict, Forbidden, Invalid, NotFound
@@ -17,6 +18,8 @@ from app.services import candidate_service
 
 # Fields a candidate may change on their own jobs.
 CANDIDATE_EDITABLE = {"status", "notes"}
+# Fields that can't be cleared with an explicit null.
+NOT_NULL = {c.name for c in Job.__table__.columns if not c.nullable}
 
 
 def _label(value: str) -> str:
@@ -83,20 +86,35 @@ async def create_job(db: AsyncSession, actor: User, payload: JobCreate) -> Job:
     candidate = await candidate_service.resolve_candidate(db, actor, payload.candidate_id)
 
     # Guard against an AI headhunter posting the same opening twice.
-    dup = await db.execute(
-        select(Job.id).where(Job.candidate_id == candidate.id, Job.apply_url == payload.apply_url)
-    )
-    existing = dup.scalar_one_or_none()
-    if existing:
-        raise Conflict(f"This candidate already has a job with that apply_url (id {existing})")
+    await _ensure_unique_url(db, candidate.id, payload.apply_url)
 
     data = payload.model_dump(exclude={"candidate_id"})
     data["date_found"] = data["date_found"] or date.today()
     job = Job(candidate_id=candidate.id, created_by_id=actor.id, **data)
     db.add(job)
-    await db.commit()
+    await _commit(db)
     await db.refresh(job)
     return job
+
+
+async def _ensure_unique_url(
+    db: AsyncSession, candidate_id: uuid.UUID, apply_url: str, *, exclude: uuid.UUID | None = None
+) -> None:
+    stmt = select(Job.id).where(Job.candidate_id == candidate_id, Job.apply_url == apply_url)
+    if exclude is not None:
+        stmt = stmt.where(Job.id != exclude)
+    existing = (await db.execute(stmt)).scalar_one_or_none()
+    if existing:
+        raise Conflict(f"This candidate already has a job with that apply_url (id {existing})")
+
+
+async def _commit(db: AsyncSession) -> None:
+    """Commit, reporting a concurrent duplicate apply_url as a conflict."""
+    try:
+        await db.commit()
+    except IntegrityError as exc:
+        await db.rollback()
+        raise Conflict("This candidate already has a job with that apply_url") from exc
 
 
 async def update_job(db: AsyncSession, actor: User, job_id: uuid.UUID, payload: JobUpdate) -> Job:
@@ -106,14 +124,16 @@ async def update_job(db: AsyncSession, actor: User, job_id: uuid.UUID, payload: 
         blocked = set(changes) - CANDIDATE_EDITABLE
         if blocked:
             raise Forbidden(f"Candidates can only change {', '.join(sorted(CANDIDATE_EDITABLE))}")
-    for required in ("title", "apply_url", "status", "date_found"):
-        if required in changes and changes[required] is None:
-            raise Invalid(f"{required} cannot be null")
+    for field in sorted(NOT_NULL & set(changes)):
+        if changes[field] is None:
+            raise Invalid(f"{field} cannot be null")
     for field, value in changes.items():
         if isinstance(value, str) and field not in ("notes",):
             value = value.strip()
         setattr(job, field, value)
-    await db.commit()
+    if "apply_url" in changes:
+        await _ensure_unique_url(db, job.candidate_id, job.apply_url, exclude=job.id)
+    await _commit(db)
     await db.refresh(job)
     return job
 

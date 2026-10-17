@@ -238,3 +238,29 @@ def test_headhunter_manages_users(client, hh):
         "/api/auth/login", json={"email": "hh2@example.com", "password": "second-hunter"}
     )
     assert bad.status_code == 401
+
+
+def test_job_update_rejects_nulls_and_duplicate_urls(client, candidate, hh):
+    cid, _ = candidate
+    first = client.post("/api/jobs", json=_job(cid), headers=hh).json()
+    second = client.post(
+        "/api/jobs", json=_job(cid, apply_url="https://example.com/other"), headers=hh
+    ).json()
+
+    resp = client.patch(f"/api/jobs/{first['id']}", json={"notes": None}, headers=hh)
+    assert resp.status_code == 422, resp.text
+
+    resp = client.patch(
+        f"/api/jobs/{second['id']}", json={"apply_url": first["apply_url"]}, headers=hh
+    )
+    assert resp.status_code == 409, resp.text
+
+
+def test_profile_rejects_bad_currency(client, candidate):
+    _, headers = candidate
+    url = "/api/candidates/me/profile"
+    resp = client.put(url, json={"salary_currency": "EURO"}, headers=headers)
+    assert resp.status_code == 422
+    resp = client.put(url, json={"salary_currency": "eur"}, headers=headers)
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["salary_currency"] == "EUR"

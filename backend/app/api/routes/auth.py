@@ -76,7 +76,11 @@ async def auth_config() -> AuthConfig:
 
 
 @router.post(
-    "/google/authorize", response_model=GoogleAuthorization, operation_id="google_authorize"
+    "/google/authorize",
+    response_model=GoogleAuthorization,
+    operation_id="google_authorize",
+    # The bearer token is optional here: only the `link` intent needs one.
+    openapi_extra={"security": [{"HTTPBearer": []}, {}]},
 )
 async def google_authorize(
     payload: GoogleAuthorizeRequest, user: User | None = Depends(get_optional_user)

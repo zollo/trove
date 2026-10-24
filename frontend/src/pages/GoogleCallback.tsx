@@ -9,12 +9,15 @@ import type { Token, User } from "../types";
 export default function GoogleCallback() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { acceptToken, setUser } = useAuth();
+  const { loading, acceptToken, setUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [linkFlow, setLinkFlow] = useState(false);
   const started = useRef(false);
 
   useEffect(() => {
+    // Let AuthProvider's startup /api/auth/me settle first, so its (possibly
+    // stale) result can't overwrite the session or user this page sets.
+    if (loading) return;
     // StrictMode runs effects twice; the code can only be redeemed once.
     if (started.current) return;
     started.current = true;
@@ -51,7 +54,7 @@ export default function GoogleCallback() {
     finish.catch((err) =>
       setError(err instanceof ApiError ? err.message : "Google sign-in failed."),
     );
-  }, [params, navigate, acceptToken, setUser]);
+  }, [loading, params, navigate, acceptToken, setUser]);
 
   return (
     <div className="center-screen">

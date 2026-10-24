@@ -1,7 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ApiError } from "../api/client";
+import { api, ApiError } from "../api/client";
+import GoogleButton from "../components/GoogleButton";
 import { useAuth } from "../context/AuthContext";
+import type { AuthConfig } from "../types";
 
 export default function Register() {
   const { register } = useAuth();
@@ -11,6 +13,14 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+
+  useEffect(() => {
+    api
+      .get<AuthConfig>("/api/auth/config")
+      .then((c) => setGoogleEnabled(c.google_enabled))
+      .catch(() => {});
+  }, []);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -76,6 +86,12 @@ export default function Register() {
             {busy ? "Creating account…" : "Create account"}
           </button>
         </form>
+        {googleEnabled && (
+          <>
+            <hr className="divider" />
+            <GoogleButton intent="login" label="Sign up with Google" onError={setError} />
+          </>
+        )}
         <p className="muted" style={{ marginTop: 18, textAlign: "center" }}>
           Already have an account? <Link to="/login">Sign in</Link>
         </p>

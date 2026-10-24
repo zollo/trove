@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api, ApiError } from "../../api/client";
+import GoogleAccount from "../../components/GoogleAccount";
 import { useAuth } from "../../context/AuthContext";
 import { formatDate } from "../../lib/format";
 import type { ApiKey, BuildInfo, Role, User } from "../../types";
@@ -11,6 +12,7 @@ export default function Settings() {
       <p className="subtitle">Connect AI headhunters and manage accounts.</p>
       <Connect />
       <ApiKeys />
+      <GoogleAccount returnTo="/settings" />
       <Users />
     </div>
   );

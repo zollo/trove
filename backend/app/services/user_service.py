@@ -40,17 +40,20 @@ async def create_user(
     db: AsyncSession,
     *,
     email: str,
-    password: str,
+    password: str | None,
     display_name: str = "",
     role: UserRole = UserRole.candidate,
+    google_sub: str | None = None,
 ) -> User:
     if await get_by_email(db, email):
         raise Conflict("Email already registered")
     user = User(
         email=email.lower(),
         display_name=display_name or email.split("@")[0],
-        hashed_password=hash_password(password),
+        hashed_password=hash_password(password) if password else None,
         role=role,
+        google_sub=google_sub,
+        google_email=email.lower() if google_sub else None,
     )
     if role == UserRole.candidate:
         user.profile = CandidateProfile()

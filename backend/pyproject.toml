@@ -23,6 +23,8 @@ dependencies = [
     "python-docx==1.2.0",
     # PDF rendering for resume downloads converted from Markdown/text/DOCX.
     "fpdf2==2.8.9",
+    # Google sign-in: redeem OAuth codes at Google's token endpoint.
+    "httpx==0.28.1",
 ]
 
 [project.optional-dependencies]
@@ -30,7 +32,6 @@ dev = [
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
     "ruff==0.17.1",
-    "httpx==0.28.1",
     "aiosqlite==0.22.1",
 ]
 

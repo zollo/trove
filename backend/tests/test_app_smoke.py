@@ -18,6 +18,8 @@ def test_app_and_openapi_build():
     assert "/api/jobs" in paths
     assert "/api/candidates/{candidate_id}/resume" in paths
     assert "/mcp" not in paths
+    # Starting Google sign-in works anonymously; only linking needs a session.
+    assert {} in paths["/api/auth/google/authorize"]["post"]["security"]
 
 
 def test_every_mcp_tool_has_a_rest_operation():

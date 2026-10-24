@@ -38,6 +38,9 @@ postings `expired` or `unavailable` when they close.
   deletes jobs, uploads optimized resumes, manages accounts and API keys. The
   first headhunter is created on startup from `BOOTSTRAP_HEADHUNTER_*`.
 
+Anyone can also **sign in with Google** once it is configured (see
+[Google sign-in](#google-sign-in)).
+
 ## Connecting an AI headhunter (MCP)
 
 1. Sign in as a headhunter, open **Settings → API keys**, and create a key
@@ -193,7 +196,62 @@ All settings are environment variables; see [`.env.example`](.env.example).
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `1440` | Web session lifetime (API keys don't expire; revoke them) |
 | `ALLOW_CANDIDATE_REGISTRATION` | `true` | Show self-service sign-up for candidates |
 | `BOOTSTRAP_HEADHUNTER_EMAIL` / `_PASSWORD` | `headhunter@example.com` / generated | First headhunter, created if missing. With no password set, a random one is printed in the backend log on first start. |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | empty | Google OAuth client. Google sign-in is **off** unless both are set. |
+| `GOOGLE_REDIRECT_URI` | `$TROVE_PUBLIC_URL/auth/google/callback` | Override only if Trove is reached on a different URL than `TROVE_PUBLIC_URL` |
 | `MAX_UPLOAD_MB` | `10` | Resume size limit |
+
+## Google sign-in
+
+With a Google OAuth client configured, the sign-in and sign-up pages show
+**Sign in with Google**, and every user gets a **Google sign-in** card (Profile
+for candidates, Settings for headhunters) to link or unlink their Google account.
+
+How accounts are matched:
+
+- A Google account that is **linked** signs straight into its Trove account
+  (candidate or headhunter).
+- A Google account that is **not linked** and whose email is **new** to Trove
+  creates a candidate account, if `ALLOW_CANDIDATE_REGISTRATION` is on and
+  Google has verified the email. These accounts have no password.
+- If the Google email **already belongs** to a Trove account, sign-in is
+  refused: the owner signs in with their password once and links Google from
+  Profile/Settings. Trove never merges accounts by email alone, so an existing
+  account can't be taken over through a Google account with the same address.
+- Unlinking requires a password, so nobody locks themselves out. A headhunter
+  can set one for a Google-only user from Settings → People.
+
+### Setting up the Google Cloud OAuth client
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), create or
+   pick a project.
+2. **Google Auth Platform → Branding** (formerly *OAuth consent screen*): set
+   the app name (e.g. Trove), support email and, under *Authorized domains*,
+   your Trove domain (e.g. `example.com`).
+3. **Audience**: choose *External* (any Google account) or *Internal* (only
+   your Google Workspace). An External app in *Testing* only lets listed test
+   users sign in; click **Publish app** to open it up. Trove only asks for the
+   `openid`, `email` and `profile` scopes, which need no Google verification.
+4. **Clients → Create client** → *Web application*:
+   - *Authorized JavaScript origins*: your public URL, e.g.
+     `https://trove.example.com`.
+   - *Authorized redirect URIs*: `https://trove.example.com/auth/google/callback`
+     (the `TROVE_PUBLIC_URL` plus `/auth/google/callback`, exactly).
+5. Copy the **Client ID** and **Client secret** into `GOOGLE_CLIENT_ID` and
+   `GOOGLE_CLIENT_SECRET` and restart the backend. The login page picks the
+   change up automatically.
+
+Google only accepts `https://` redirect URIs on a public domain, plus
+`http://localhost` for development. A LAN URL such as
+`http://truenas.local:30081` won't work; put Trove behind HTTPS on a real
+domain (a reverse proxy or tunnel) to use Google sign-in there. For local
+development add `http://localhost:8080/auth/google/callback` (Docker) or
+`http://localhost:5173/auth/google/callback` (Vite, with
+`TROVE_PUBLIC_URL=http://localhost:5173`).
+
+Under the hood this is the OpenID Connect authorization-code flow with PKCE,
+handled by the backend (`app/services/google_auth.py`) so the client secret
+never reaches the browser. The flow is stateless (a signed, 10-minute `state`),
+so it works with any number of backend replicas.
 
 ## Deploying to TrueNAS SCALE
 
@@ -216,12 +274,15 @@ kubectl -n trove create secret generic trove-secrets \
   --from-literal=SECRET_KEY="$(openssl rand -hex 32)" \
   --from-literal=POSTGRES_PASSWORD="$(openssl rand -hex 16)" \
   --from-literal=BOOTSTRAP_HEADHUNTER_PASSWORD="$(openssl rand -hex 12)"
+  # optional, enables Google sign-in together with config.GOOGLE_CLIENT_ID:
+  # --from-literal=GOOGLE_CLIENT_SECRET=...
 
 helm install trove oci://ghcr.io/zollo/charts/trove -n trove \
   --set existingSecret=trove-secrets \
   --set ingress.enabled=true --set ingress.hosts[0]=trove.example.com \
   --set config.CORS_ORIGINS=https://trove.example.com \
   --set config.TROVE_PUBLIC_URL=https://trove.example.com
+  # --set config.GOOGLE_CLIENT_ID=1234-abc.apps.googleusercontent.com
 ```
 
 See `charts/trove/values.yaml` for external Postgres, resources, and

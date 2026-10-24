@@ -34,6 +34,16 @@ async def get_current_user(
     return user
 
 
+async def get_optional_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> User | None:
+    """The caller if a valid bearer token was sent, else None."""
+    if creds is None or not creds.credentials:
+        return None
+    return await user_service.resolve_token(db, creds.credentials)
+
+
 async def get_current_headhunter(user: User = Depends(get_current_user)) -> User:
     if not user.is_headhunter:
         raise HTTPException(

@@ -30,11 +30,15 @@ config:
   # The login form rejects special-use domains such as .local, so use a real-looking one.
   BOOTSTRAP_HEADHUNTER_EMAIL: headhunter@example.com
   MAX_UPLOAD_MB: "10"
+  # Google sign-in: set this plus secrets.GOOGLE_CLIENT_SECRET (or that key in
+  # existingSecret). Redirect URI in Google Cloud: TROVE_PUBLIC_URL + /auth/google/callback.
+  GOOGLE_CLIENT_ID: ""
 
 # -- Name of an existing Secret with the sensitive settings. Keys:
 # SECRET_KEY, POSTGRES_PASSWORD (required); BOOTSTRAP_HEADHUNTER_PASSWORD
 # (optional: if unset, a random password is generated and printed in the backend
-# log on first start). When empty the chart creates a Secret from `secrets` below.
+# log on first start); GOOGLE_CLIENT_SECRET (optional, enables Google sign-in
+# with config.GOOGLE_CLIENT_ID). When empty the chart creates a Secret from `secrets` below.
 existingSecret: ""
 
 # -- Sensitive settings, used only when existingSecret is empty. Prefer an
@@ -43,6 +47,7 @@ secrets: {}
 #  SECRET_KEY: "<openssl rand -hex 32>"
 #  POSTGRES_PASSWORD: "<openssl rand -hex 16>"
 #  BOOTSTRAP_HEADHUNTER_PASSWORD: ""
+#  GOOGLE_CLIENT_SECRET: ""
 
 backend:
   replicaCount: 2

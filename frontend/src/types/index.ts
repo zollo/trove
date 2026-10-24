@@ -29,6 +29,9 @@ export interface User {
   display_name: string;
   role: Role;
   is_active: boolean;
+  has_password: boolean;
+  // Email of the linked Google account, if any.
+  google_email: string | null;
   created_at: string;
 }
 
@@ -40,6 +43,13 @@ export interface Token {
 
 export interface AuthConfig {
   registration_enabled: boolean;
+  google_enabled: boolean;
+}
+
+export interface GoogleAuthorization {
+  authorization_url: string;
+  state: string;
+  code_verifier: string;
 }
 
 export interface DocumentMeta {

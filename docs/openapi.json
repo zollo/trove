@@ -215,6 +215,171 @@
         }
       }
     },
+    "/api/auth/google/authorize": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Google Authorize",
+        "description": "Start Google sign-in. `link` requires a session; send the browser to the returned URL.",
+        "operationId": "google_authorize",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleAuthorizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoogleAuthorization"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          },
+          {
+            "HTTPBearer": []
+          },
+          {}
+        ]
+      }
+    },
+    "/api/auth/google/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Google Login",
+        "description": "Finish Google sign-in with the code from Google's redirect; returns a session token.",
+        "operationId": "google_login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleCallback"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/google/link": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Google Link",
+        "description": "Link the Google account from Google's redirect to the signed-in user.",
+        "operationId": "google_link",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoogleCallback"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Google Unlink",
+        "description": "Unlink Google from the signed-in user (they must have a password).",
+        "operationId": "google_unlink",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/users": {
       "get": {
         "tags": [
@@ -1526,6 +1691,11 @@
           "registration_enabled": {
             "type": "boolean",
             "title": "Registration Enabled"
+          },
+          "google_enabled": {
+            "type": "boolean",
+            "title": "Google Enabled",
+            "default": false
           }
         },
         "type": "object",
@@ -1883,6 +2053,73 @@
           "docx"
         ],
         "title": "ExportFormat"
+      },
+      "GoogleAuthorization": {
+        "properties": {
+          "authorization_url": {
+            "type": "string",
+            "title": "Authorization Url"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "code_verifier": {
+            "type": "string",
+            "title": "Code Verifier"
+          }
+        },
+        "type": "object",
+        "required": [
+          "authorization_url",
+          "state",
+          "code_verifier"
+        ],
+        "title": "GoogleAuthorization"
+      },
+      "GoogleAuthorizeRequest": {
+        "properties": {
+          "intent": {
+            "type": "string",
+            "enum": [
+              "login",
+              "link"
+            ],
+            "title": "Intent",
+            "default": "login"
+          }
+        },
+        "type": "object",
+        "title": "GoogleAuthorizeRequest"
+      },
+      "GoogleCallback": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 2048,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "state": {
+            "type": "string",
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "State"
+          },
+          "code_verifier": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 43,
+            "title": "Code Verifier"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "state",
+          "code_verifier"
+        ],
+        "title": "GoogleCallback"
       },
       "HTTPValidationError": {
         "properties": {
@@ -2765,6 +3002,21 @@
             "type": "boolean",
             "title": "Is Active"
           },
+          "has_password": {
+            "type": "boolean",
+            "title": "Has Password"
+          },
+          "google_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Google Email"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -2778,6 +3030,7 @@
           "display_name",
           "role",
           "is_active",
+          "has_password",
           "created_at"
         ],
         "title": "UserRead"

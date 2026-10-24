@@ -46,6 +46,40 @@ def test_parse_html():
     assert Run("Python", bold=True) in blocks[1].runs
 
 
+def test_heading_keeps_literal_hash():
+    blocks = resume_export.parse_markdown("## C#\n## .NET / C# ##\n")
+    assert [b.runs[0].text for b in blocks] == ["C#", ".NET / C#"]
+
+
+def test_html_table_cells_stay_apart():
+    html = "<table><tr><td>2020-2024</td><td>Acme</td><td>Staff Engineer</td></tr></table>"
+    (row,) = resume_export.parse_html(html)
+    assert "".join(r.text for r in row.runs) == "2020-2024 | Acme | Staff Engineer"
+
+
+def test_docx_keeps_body_order_and_hyperlinks():
+    from docx.oxml.parser import OxmlElement
+
+    document = docx.Document()
+    contact = document.add_paragraph("Email: ")
+    link = OxmlElement("w:hyperlink")
+    run = OxmlElement("w:r")
+    text = OxmlElement("w:t")
+    text.text = "jane@example.com"
+    run.append(text)
+    link.append(run)
+    contact._p.append(link)
+    document.add_heading("Experience", level=2)
+    document.add_table(rows=1, cols=2).rows[0].cells[0].text = "Acme"
+    document.add_heading("Education", level=2)
+    buf = io.BytesIO()
+    document.save(buf)
+
+    blocks = resume_export.parse_docx(buf.getvalue())
+    texts = ["".join(r.text for r in b.runs) for b in blocks]
+    assert texts == ["Email: jane@example.com", "Experience", "Acme | ", "Education"]
+
+
 def test_markdown_round_trips_through_docx_and_pdf():
     name, data = resume_export.convert("cv.md", MARKDOWN.encode(), None, ExportFormat.docx)
     assert name == "cv.docx"

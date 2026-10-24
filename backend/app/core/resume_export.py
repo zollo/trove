@@ -50,7 +50,8 @@ _INLINE = re.compile(
     r"|(?<![\w*])\*(?P<i1>[^*\s][^*]*?)\*(?![\w*])|(?<!\w)_(?P<i2>[^_\s][^_]*?)_(?!\w)"
     r"|`(?P<code>[^`]+)`|!?\[(?P<link>[^\]]*)\]\([^)]*\)"
 )
-_HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
+# Closing hashes need a space before them, so "## C#" keeps its hash.
+_HEADING = re.compile(r"^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$")
 _BULLET = re.compile(r"^\s*(?:[-*+•]|\d+[.)])\s+(.*)$")
 _RULE = re.compile(r"^\s*([-*_])(\s*\1){2,}\s*$")
 
@@ -152,6 +153,9 @@ class _HTMLBlocks(HTMLParser):
         elif tag == "hr":
             self._close()
             self.blocks.append(Block("hr"))
+        elif tag in ("td", "th") and self.current and self.current.runs:
+            # Cells of a row share one block; keep them apart.
+            self.current.runs.append(Run(" | "))
         elif tag == "br" and self.current:
             self.current.runs.append(Run("\n"))
         elif tag in ("b", "strong"):
@@ -190,13 +194,20 @@ def parse_html(text: str) -> list[Block]:
 
 def parse_docx(data: bytes) -> list[Block]:
     import docx
+    from docx.table import Table
+    from docx.text.hyperlink import Hyperlink
 
     document = docx.Document(io.BytesIO(data))
     blocks: list[Block] = []
-    for para in document.paragraphs:
-        if not para.text.strip():
+    # Body order, so tables stay under the section they belong to.
+    for item in document.iter_inner_content():
+        if isinstance(item, Table):
+            for row in item.rows:
+                blocks.append(Block("p", [Run(" | ".join(cell.text for cell in row.cells))]))
             continue
-        style = (para.style.name if para.style is not None else "") or ""
+        if not item.text.strip():
+            continue
+        style = (item.style.name if item.style is not None else "") or ""
         if style == "Title":
             kind = "h1"
         elif style.startswith("Heading"):
@@ -206,11 +217,13 @@ def parse_docx(data: bytes) -> list[Block]:
             kind = "li"
         else:
             kind = "p"
-        runs = [Run(r.text, bold=bool(r.bold), italic=bool(r.italic)) for r in para.runs if r.text]
-        blocks.append(Block(kind, runs or [Run(para.text)]))
-    for table in document.tables:
-        for row in table.rows:
-            blocks.append(Block("p", [Run(" | ".join(cell.text for cell in row.cells))]))
+        runs: list[Run] = []
+        # Hyperlinks (often the email or LinkedIn line) hold runs of their own.
+        for part in item.iter_inner_content():
+            for r in part.runs if isinstance(part, Hyperlink) else [part]:
+                if r.text:
+                    runs.append(Run(r.text, bold=bool(r.bold), italic=bool(r.italic)))
+        blocks.append(Block(kind, runs or [Run(item.text)]))
     return blocks
 
 

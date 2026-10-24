@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import undefer
 
 from app.config import settings
-from app.core import resume_text
+from app.core import resume_export, resume_text
 from app.core.errors import Conflict, Invalid, NotFound, TooLarge
 from app.models.document import Document, DocumentKind
 from app.models.job import Job
@@ -160,3 +160,14 @@ def to_content(doc: Document, include_file: bool) -> DocumentContent:
     if include_file:
         out.content_base64 = base64.b64encode(doc.data).decode()
     return out
+
+
+def export(doc: Document, fmt: resume_export.ExportFormat | None) -> tuple[str, str, bytes]:
+    """(filename, content type, bytes) of a resume, converted to ``fmt`` if given."""
+    if fmt is None:
+        return doc.filename, doc.content_type, doc.data
+    try:
+        name, data = resume_export.convert(doc.filename, doc.data, doc.text_content, fmt)
+    except resume_export.ConversionError as exc:
+        raise Invalid(f"{exc}; download the original file instead") from exc
+    return name, resume_text.content_type_for(name), data

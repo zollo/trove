@@ -4,6 +4,9 @@ from __future__ import annotations
 import base64
 import io
 
+import docx
+
+from app.core import resume_text
 from tests.conftest import login
 
 
@@ -204,6 +207,42 @@ def test_optimized_resume_per_job(client, candidate, hh):
         headers=hh,
     )
     assert client.get(f"/api/jobs/{job['id']}/resume", headers=hh).content == b"v2"
+
+
+def test_optimized_resume_download_as_pdf_or_docx(client, candidate, hh):
+    cid, cand_headers = candidate
+    job = client.post("/api/jobs", json=_job(cid), headers=hh).json()
+    url = f"/api/jobs/{job['id']}/resume"
+    markdown = "# Jane Doe\n\n## Experience\n\n- Led the **platform** team at Acme — 5 yrs\n"
+    client.put(
+        f"{url}/content",
+        json={"filename": "acme-resume", "content_text": markdown},
+        headers=hh,
+    )
+
+    pdf = client.get(f"{url}?format=pdf", headers=cand_headers)
+    assert pdf.status_code == 200, pdf.text
+    assert pdf.headers["content-type"] == "application/pdf"
+    assert 'filename="acme-resume.pdf"' in pdf.headers["content-disposition"]
+    assert "platform team" in resume_text.extract_text("x.pdf", pdf.content)
+
+    word = client.get(f"{url}?format=docx", headers=cand_headers)
+    assert word.status_code == 200, word.text
+    assert 'filename="acme-resume.docx"' in word.headers["content-disposition"]
+    paragraphs = docx.Document(io.BytesIO(word.content)).paragraphs
+    assert [p.style.name for p in paragraphs][:3] == ["Heading 1", "Heading 2", "List Bullet"]
+    assert paragraphs[2].text == "Led the platform team at Acme — 5 yrs"
+
+    # A DOCX upload converts to PDF, and is served untouched as DOCX.
+    client.put(url, files={"file": ("cv.docx", io.BytesIO(word.content), "x")}, headers=hh)
+    assert client.get(f"{url}?format=docx", headers=cand_headers).content == word.content
+    as_pdf = client.get(f"{url}?format=pdf", headers=cand_headers)
+    assert "Jane Doe" in resume_text.extract_text("x.pdf", as_pdf.content)
+
+    # Formats we can't read are refused rather than served broken.
+    client.put(url, files={"file": ("cv.odt", io.BytesIO(b"PK..."), "x")}, headers=hh)
+    assert client.get(f"{url}?format=pdf", headers=cand_headers).status_code == 422
+    assert client.get(f"{url}?format=rtf", headers=cand_headers).status_code == 422
 
 
 def test_api_keys(client, hh, candidate):

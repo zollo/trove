@@ -145,6 +145,7 @@ export default function JobDetail() {
         <FileBox
           doc={job.optimized_resume}
           path={`/api/jobs/${job.id}/resume`}
+          convertible
           canUpload={isHeadhunter}
           emptyText={isHeadhunter ? "No tailored resume yet." : "Not available yet."}
           onChange={(doc) => setJob({ ...job, optimized_resume: doc })}

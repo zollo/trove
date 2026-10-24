@@ -20,10 +20,14 @@ async def read_upload(file: UploadFile) -> tuple[str, bytes]:
 
 
 def file_response(doc: Document) -> Response:
-    ascii_name = doc.filename.encode("ascii", "ignore").decode() or "resume"
-    disposition = f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(doc.filename)}"
+    return send_file(doc.filename, doc.content_type, doc.data)
+
+
+def send_file(filename: str, content_type: str, data: bytes) -> Response:
+    ascii_name = filename.encode("ascii", "ignore").decode() or "resume"
+    disposition = f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(filename)}"
     return Response(
-        content=doc.data,
-        media_type=doc.content_type,
+        content=data,
+        media_type=content_type,
         headers={"Content-Disposition": disposition, "Cache-Control": "private, no-store"},
     )

@@ -6,9 +6,11 @@ import uuid
 from fastapi import APIRouter, Depends, File, Query, Response, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
 
 from app.api.deps import get_current_headhunter, get_current_user
-from app.api.files import file_response, read_upload
+from app.api.files import read_upload, send_file
+from app.core.resume_export import ExportFormat
 from app.db import get_db
 from app.models.job import JobStatus
 from app.models.user import User
@@ -132,11 +134,19 @@ async def upload_optimized_resume_content(
 )
 async def download_optimized_resume(
     job_id: uuid.UUID,
+    format: ExportFormat | None = Query(
+        None,
+        description="Convert to PDF or DOCX. Omit to get the file as uploaded; a file "
+        "already in the requested format is returned unchanged.",
+    ),
     actor: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Response:
+    """Download the tailored resume, optionally converted to PDF or DOCX."""
     job = await job_service.get_job(db, actor, job_id)
-    return file_response(await document_service.get_optimized_resume(db, job))
+    doc = await document_service.get_optimized_resume(db, job)
+    # Conversion is CPU-bound; keep it off the event loop.
+    return send_file(*await run_in_threadpool(document_service.export, doc, format))
 
 
 @router.get(

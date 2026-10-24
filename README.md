@@ -32,7 +32,7 @@ postings `expired` or `unavailable` when they close.
 
 - **Candidate** — sees only their own profile, resume and jobs. On a job they can
   change the **status** and **notes**, open the apply link and download the
-  tailored resume. Candidates can register themselves
+  tailored resume as uploaded or converted to PDF or Word (DOCX). Candidates can register themselves
   (`ALLOW_CANDIDATE_REGISTRATION`), or a headhunter can add them.
 - **Headhunter** — sees and acts for **every** candidate: posts, edits and
   deletes jobs, uploads optimized resumes, manages accounts and API keys. The
@@ -95,6 +95,9 @@ Interactive docs at `/docs` (Swagger UI) and `/redoc`; the spec at
   `PUT /api/candidates/{id}/resume` and `PUT /api/jobs/{id}/resume`; downloads
   are `GET` on the same paths. `PUT /api/jobs/{id}/resume/content` takes JSON
   (`content_text` or `content_base64`) instead.
+- `GET /api/jobs/{id}/resume?format=pdf|docx` converts the tailored resume
+  server-side (Markdown, text, HTML, DOCX and PDF sources); a file already in
+  that format is returned as-is.
 
 ```bash
 TROVE=https://trove.example.com KEY=trove_…

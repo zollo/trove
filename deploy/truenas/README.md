@@ -61,6 +61,12 @@ Open `http://<truenas-ip>:30081` and sign in with `BOOTSTRAP_HEADHUNTER_EMAIL` a
 login page (turn that off with `ALLOW_CANDIDATE_REGISTRATION=false`). Create an
 API key under **Settings** to connect an AI headhunter over MCP.
 
+**Google sign-in** is optional: set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
+(see the main README's *Google sign-in* section). Google only redirects to
+`https://` URLs on a public domain, so it needs Trove behind HTTPS (a reverse
+proxy or tunnel) with `TROVE_PUBLIC_URL` set to that URL; it won't work on a
+plain `http://<truenas-ip>:30081` address.
+
 ## 5. Backups
 
 Snapshot (and optionally replicate) the `TROVE_DATA` dataset — it holds the full

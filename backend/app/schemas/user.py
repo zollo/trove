@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -17,6 +18,9 @@ class UserRead(BaseModel):
     display_name: str
     role: UserRole
     is_active: bool
+    has_password: bool
+    # Email of the linked Google account; null when Google is not linked.
+    google_email: str | None = None
     created_at: datetime
 
 
@@ -52,3 +56,22 @@ class Token(BaseModel):
 
 class AuthConfig(BaseModel):
     registration_enabled: bool
+    google_enabled: bool = False
+
+
+class GoogleAuthorizeRequest(BaseModel):
+    # `login` signs in (or signs up); `link` attaches Google to the caller's account.
+    intent: Literal["login", "link"] = "login"
+
+
+class GoogleAuthorization(BaseModel):
+    authorization_url: str
+    # Keep both in the browser and send them back with the code from the callback.
+    state: str
+    code_verifier: str
+
+
+class GoogleCallback(BaseModel):
+    code: str = Field(min_length=1, max_length=2048)
+    state: str = Field(min_length=1, max_length=4096)
+    code_verifier: str = Field(min_length=43, max_length=128)

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuth } from "./context/AuthContext";
+import GoogleCallback from "./pages/GoogleCallback";
 import Info from "./pages/Info";
 import JobDetail from "./pages/JobDetail";
 import Login from "./pages/Login";
@@ -24,6 +25,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
       <Route
         element={

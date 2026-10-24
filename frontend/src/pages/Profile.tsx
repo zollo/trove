@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api, ApiError } from "../api/client";
 import ChipInput from "../components/ChipInput";
 import FileBox from "../components/FileBox";
+import GoogleAccount from "../components/GoogleAccount";
 import ToggleGroup from "../components/ToggleGroup";
 import {
   EMPLOYMENT_LABELS,
@@ -224,6 +225,8 @@ export default function Profile() {
           {saved && <span className="alert success" style={{ margin: 0 }}>Saved</span>}
         </div>
       </form>
+
+      <GoogleAccount returnTo="/profile" />
     </div>
   );
 }

@@ -59,6 +59,10 @@ services:
       BOOTSTRAP_HEADHUNTER_EMAIL: ${BOOTSTRAP_HEADHUNTER_EMAIL:-headhunter@example.com}
       BOOTSTRAP_HEADHUNTER_PASSWORD: ${BOOTSTRAP_HEADHUNTER_PASSWORD:-}
       MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-10}
+      # Google sign-in: off unless both are set (needs an https public URL).
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
     depends_on:
       postgres:
         condition: service_healthy

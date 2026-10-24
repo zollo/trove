@@ -45,6 +45,22 @@
             "title": "Is Active",
             "type": "boolean"
           },
+          "has_password": {
+            "title": "Has Password",
+            "type": "boolean"
+          },
+          "google_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Google Email"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -57,6 +73,7 @@
           "display_name",
           "role",
           "is_active",
+          "has_password",
           "created_at"
         ],
         "title": "UserRead",

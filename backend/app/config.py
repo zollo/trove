@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     )
     bootstrap_headhunter_password: str = Field(default="", alias="BOOTSTRAP_HEADHUNTER_PASSWORD")
 
+    # Google sign-in (OAuth 2.0 / OpenID Connect). Disabled unless both are set.
+    google_client_id: str = Field(default="", alias="GOOGLE_CLIENT_ID")
+    google_client_secret: str = Field(default="", alias="GOOGLE_CLIENT_SECRET")
+    # Must match an "Authorized redirect URI" of the OAuth client; defaults to
+    # TROVE_PUBLIC_URL + /auth/google/callback (a route of the web UI).
+    google_redirect_uri: str = Field(default="", alias="GOOGLE_REDIRECT_URI")
+
     # Uploads
     max_upload_mb: int = Field(default=10, alias="MAX_UPLOAD_MB")
 
@@ -84,6 +91,14 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def google_enabled(self) -> bool:
+        return bool(self.google_client_id.strip() and self.google_client_secret.strip())
+
+    @property
+    def google_callback_url(self) -> str:
+        return self.google_redirect_uri or f"{self.public_url.rstrip('/')}/auth/google/callback"
 
     @property
     def max_upload_bytes(self) -> int:

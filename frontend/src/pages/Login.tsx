@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api/client";
+import GoogleButton from "../components/GoogleButton";
 import { useAuth } from "../context/AuthContext";
 import type { AuthConfig } from "../types";
 
@@ -11,7 +12,10 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [config, setConfig] = useState<AuthConfig>({ registration_enabled: true });
+  const [config, setConfig] = useState<AuthConfig>({
+    registration_enabled: true,
+    google_enabled: false,
+  });
 
   useEffect(() => {
     if (user) navigate("/");
@@ -74,6 +78,13 @@ export default function Login() {
             {busy ? "Signing in…" : "Sign in"}
           </button>
         </form>
+
+        {config.google_enabled && (
+          <>
+            <hr className="divider" />
+            <GoogleButton intent="login" label="Sign in with Google" onError={setError} />
+          </>
+        )}
 
         {config.registration_enabled && (
           <p className="muted" style={{ marginTop: 18, textAlign: "center" }}>

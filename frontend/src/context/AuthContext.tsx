@@ -17,6 +17,9 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => void;
+  // Adopt a session obtained elsewhere (e.g. Google sign-in).
+  acceptToken: (token: Token) => void;
+  setUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -63,6 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const acceptToken = useCallback((res: Token) => {
+    setToken(res.access_token);
+    setUser(res.user);
+  }, []);
+
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
@@ -76,8 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      acceptToken,
+      setUser,
     }),
-    [user, loading, login, register, logout],
+    [user, loading, login, register, logout, acceptToken],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

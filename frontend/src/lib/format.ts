@@ -79,3 +79,9 @@ export function formatSalary(p: Pick<Profile, "salary_min" | "salary_max" | "sal
   if (p.salary_max != null) return `up to ${fmt(p.salary_max)}${per}`;
   return "";
 }
+
+/** `resume.md` -> `resume.pdf` */
+export function exportName(filename: string, format: string): string {
+  const dot = filename.lastIndexOf(".");
+  return `${dot > 0 ? filename.slice(0, dot) : filename || "resume"}.${format}`;
+}

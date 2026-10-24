@@ -1,9 +1,15 @@
 import { useRef, useState, type ChangeEvent } from "react";
 import { api, ApiError } from "../api/client";
-import { formatBytes, formatDate } from "../lib/format";
+import { exportName, formatBytes, formatDate } from "../lib/format";
 import type { DocumentMeta } from "../types";
 
 const ACCEPT = ".pdf,.docx,.doc,.odt,.rtf,.txt,.md,.html";
+
+// Formats the API can convert a resume to (`?format=`), with button labels.
+const EXPORTS = [
+  { format: "pdf", label: "PDF" },
+  { format: "docx", label: "Word" },
+] as const;
 
 // Shows an uploaded resume with download / replace / remove actions.
 export default function FileBox({
@@ -11,6 +17,7 @@ export default function FileBox({
   path,
   canUpload,
   canDelete = canUpload,
+  convertible = false,
   emptyText,
   onChange,
 }: {
@@ -19,6 +26,8 @@ export default function FileBox({
   path: string;
   canUpload: boolean;
   canDelete?: boolean;
+  /** Offer PDF / Word downloads converted by the server. */
+  convertible?: boolean;
   emptyText: string;
   onChange?: (doc: DocumentMeta | null) => void;
 }) {
@@ -74,8 +83,25 @@ export default function FileBox({
               disabled={busy}
               onClick={() => void run(() => api.download(path, doc.filename))}
             >
-              Download
+              {convertible ? "Original" : "Download"}
             </button>
+            {convertible &&
+              EXPORTS.map(({ format, label }) => (
+                <button
+                  key={format}
+                  type="button"
+                  className="btn small"
+                  disabled={busy}
+                  title={`Download as ${label}`}
+                  onClick={() =>
+                    void run(() =>
+                      api.download(`${path}?format=${format}`, exportName(doc.filename, format)),
+                    )
+                  }
+                >
+                  {label}
+                </button>
+              ))}
             {canUpload && (
               <button
                 type="button"

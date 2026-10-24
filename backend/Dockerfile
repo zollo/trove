@@ -5,8 +5,8 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
-# curl for the container healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
+# curl for the container healthcheck; DejaVu fonts for PDF resume export
+RUN apt-get update && apt-get install -y --no-install-recommends curl fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

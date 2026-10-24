@@ -1362,6 +1362,7 @@
           "jobs"
         ],
         "summary": "Download Optimized Resume",
+        "description": "Download the tailored resume, optionally converted to PDF or DOCX.",
         "operationId": "download_optimized_resume",
         "security": [
           {
@@ -1378,6 +1379,24 @@
               "format": "uuid",
               "title": "Job Id"
             }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ExportFormat"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Convert to PDF or DOCX. Omit to get the file as uploaded; a file already in the requested format is returned unchanged.",
+              "title": "Format"
+            },
+            "description": "Convert to PDF or DOCX. Omit to get the file as uploaded; a file already in the requested format is returned unchanged."
           }
         ],
         "responses": {
@@ -2026,6 +2045,14 @@
           "other"
         ],
         "title": "EmploymentType"
+      },
+      "ExportFormat": {
+        "type": "string",
+        "enum": [
+          "pdf",
+          "docx"
+        ],
+        "title": "ExportFormat"
       },
       "GoogleAuthorization": {
         "properties": {

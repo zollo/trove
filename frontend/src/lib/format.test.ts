@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { STATUSES, STATUS_GROUPS, formatBytes, formatSalary } from "./format";
+import { STATUSES, STATUS_GROUPS, exportName, formatBytes, formatSalary } from "./format";
 
 describe("formatBytes", () => {
   it("picks a sensible unit", () => {
@@ -24,5 +24,13 @@ describe("STATUS_GROUPS", () => {
     for (const g of STATUS_GROUPS) {
       for (const s of g.statuses ?? []) expect(STATUSES).toContain(s);
     }
+  });
+});
+
+describe("exportName", () => {
+  it("swaps the extension for the download format", () => {
+    expect(exportName("acme-resume.md", "pdf")).toBe("acme-resume.pdf");
+    expect(exportName("cv.v2.docx", "docx")).toBe("cv.v2.docx");
+    expect(exportName("resume", "docx")).toBe("resume.docx");
   });
 });

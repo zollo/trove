@@ -9,7 +9,7 @@ import type { Token } from "../types";
 // link previews and mail scanners that merely fetch the page can't use it up.
 export default function LoginLinkPage() {
   const navigate = useNavigate();
-  const { user, loading, acceptToken, logout } = useAuth();
+  const { user, loading, acceptToken } = useAuth();
   const [token] = useState(() => window.location.hash.replace(/^#/, ""));
   const [error, setError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -63,13 +63,8 @@ export default function LoginLinkPage() {
               someone else?
             </p>
             <div className="row">
-              <button
-                className="btn"
-                onClick={() => {
-                  logout();
-                  setConfirmed(true);
-                }}
-              >
+              {/* The current session is replaced only once the link is redeemed. */}
+              <button className="btn" onClick={() => setConfirmed(true)}>
                 Switch account
               </button>
               <Link to="/" className="btn secondary">

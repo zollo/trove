@@ -2,6 +2,7 @@
 from app.models.api_key import ApiKey
 from app.models.document import Document, DocumentKind
 from app.models.job import EmploymentType, Job, JobStatus, WorkMode
+from app.models.login_link import LoginLink
 from app.models.profile import CandidateProfile, SalaryPeriod
 from app.models.user import User, UserRole
 
@@ -13,6 +14,7 @@ __all__ = [
     "EmploymentType",
     "Job",
     "JobStatus",
+    "LoginLink",
     "SalaryPeriod",
     "User",
     "UserRole",

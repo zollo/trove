@@ -1,4 +1,4 @@
-"""Authentication: local login, Google sign-in/linking and candidate self-registration."""
+"""Authentication: local login, magic links, Google sign-in/linking and self-registration."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,6 +9,7 @@ from app.config import settings
 from app.core.security import create_access_token
 from app.db import get_db
 from app.models.user import User, UserRole
+from app.schemas.login_link import LoginLinkRedeem
 from app.schemas.user import (
     AuthConfig,
     GoogleAuthorization,
@@ -19,7 +20,7 @@ from app.schemas.user import (
     Token,
     UserRead,
 )
-from app.services import google_auth, user_service
+from app.services import google_auth, login_link_service, user_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -57,6 +58,19 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db))
         display_name=payload.display_name,
         role=UserRole.candidate,
     )
+    return _token_for(user)
+
+
+@router.post("/login-link", response_model=Token, operation_id="redeem_login_link")
+async def redeem_login_link(payload: LoginLinkRedeem, db: AsyncSession = Depends(get_db)) -> Token:
+    """Exchange a magic login link's token for a session. Each link works once, within 24 hours."""
+    try:
+        user = await login_link_service.redeem(db, payload.token)
+    except login_link_service.LinkRejected:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="This sign-in link is invalid, expired or has already been used",
+        ) from None
     return _token_for(user)
 
 

@@ -159,3 +159,14 @@ export interface BuildInfo {
   openapi_url: string;
   mcp_url: string;
 }
+
+export interface LoginLink {
+  id: string;
+  user_id: string;
+  created_by_id: string | null;
+  created_at: string;
+  expires_at: string;
+  // Only in the response that creates the link.
+  url?: string;
+  token?: string;
+}

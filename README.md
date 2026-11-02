@@ -39,7 +39,8 @@ postings `expired` or `unavailable` when they close.
   first headhunter is created on startup from `BOOTSTRAP_HEADHUNTER_*`.
 
 Anyone can also **sign in with Google** once it is configured (see
-[Google sign-in](#google-sign-in)).
+[Google sign-in](#google-sign-in)), and a headhunter can send a candidate a
+[magic login link](#magic-login-links).
 
 ## Connecting an AI headhunter (MCP)
 
@@ -199,6 +200,23 @@ All settings are environment variables; see [`.env.example`](.env.example).
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | empty | Google OAuth client. Google sign-in is **off** unless both are set. |
 | `GOOGLE_REDIRECT_URI` | `$TROVE_PUBLIC_URL/auth/google/callback` | Override only if Trove is reached on a different URL than `TROVE_PUBLIC_URL` |
 | `MAX_UPLOAD_MB` | `10` | Resume size limit |
+
+## Magic login links
+
+A headhunter can sign a candidate in without a password: **Settings → People →
+Login link** next to the candidate creates a link to send them (also
+`POST /api/users/{id}/login-links`).
+
+- A link works **once** and expires **24 hours** after it is created.
+- Only candidate accounts can get one, and a deactivated candidate's links stop
+  working.
+- Trove stores only a SHA-256 hash of the token; the link is shown once.
+- The token is in the URL fragment (`/auth/link#…`), so it never reaches server
+  or proxy logs, and the page redeems it with a `POST`, so link previews and
+  mail scanners that fetch the URL don't use it up.
+- **Revoke** (or `DELETE /api/users/{id}/login-links`) cancels every unused
+  link of that candidate. The API link uses `TROVE_PUBLIC_URL`; the Settings page
+  builds it on the address you are using.
 
 ## Google sign-in
 

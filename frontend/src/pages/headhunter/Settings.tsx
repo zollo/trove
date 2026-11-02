@@ -3,7 +3,7 @@ import { api, ApiError } from "../../api/client";
 import GoogleAccount from "../../components/GoogleAccount";
 import { useAuth } from "../../context/AuthContext";
 import { formatDate } from "../../lib/format";
-import type { ApiKey, BuildInfo, Role, User } from "../../types";
+import type { ApiKey, BuildInfo, LoginLink, Role, User } from "../../types";
 
 export default function Settings() {
   return (
@@ -178,6 +178,7 @@ function Users() {
   });
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [link, setLink] = useState<{ user: User; url: string; expiresAt: string } | null>(null);
 
   const load = () => api.get<User[]>("/api/users").then(setUsers).catch(() => {});
   useEffect(() => {
@@ -207,11 +208,66 @@ function Users() {
     }
   };
 
+  const createLink = async (u: User) => {
+    setError(null);
+    setOk(null);
+    try {
+      const created = await api.post<LoginLink>(`/api/users/${u.id}/login-links`);
+      // Build the link on this origin, which is the one the headhunter uses.
+      const url = `${window.location.origin}/auth/link#${created.token ?? ""}`;
+      setLink({ user: u, url, expiresAt: created.expires_at });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to create a login link");
+    }
+  };
+
+  const revokeLinks = async (u: User) => {
+    if (!confirm(`Revoke every unused login link for ${u.display_name}?`)) return;
+    try {
+      await api.del(`/api/users/${u.id}/login-links`);
+      setLink(null);
+      setOk(`Revoked ${u.display_name}'s login links.`);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to revoke login links");
+    }
+  };
+
   return (
     <div className="card" id="users">
       <h2>People</h2>
       {error && <div className="alert error">{error}</div>}
       {ok && <div className="alert success">{ok}</div>}
+      {link && (
+        <div className="alert success">
+          <strong>Login link for {link.user.display_name}</strong>
+          <div className="small" style={{ marginTop: 4 }}>
+            Works once, until {new Date(link.expiresAt).toLocaleString()}. Send it to them
+            privately; anyone with it can sign in as them. It won't be shown again.
+          </div>
+          <div className="secret" style={{ marginTop: 8 }}>
+            {link.url}
+          </div>
+          <div className="row" style={{ marginTop: 8 }}>
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => void navigator.clipboard?.writeText(link.url)}
+            >
+              Copy
+            </button>
+            <button
+              type="button"
+              className="btn secondary small"
+              onClick={() => void revokeLinks(link.user)}
+            >
+              Revoke
+            </button>
+            <button type="button" className="btn secondary small" onClick={() => setLink(null)}>
+              Done
+            </button>
+          </div>
+        </div>
+      )}
       <div className="list" style={{ marginBottom: 16 }}>
         {users.map((u) => (
           <div key={u.id} className="file-row">
@@ -225,11 +281,18 @@ function Users() {
               </div>
               <div className="muted small">{u.email}</div>
             </div>
-            {u.id !== me?.id && (
-              <button className="btn secondary small" onClick={() => void toggle(u)}>
-                {u.is_active ? "Deactivate" : "Reactivate"}
-              </button>
-            )}
+            <div className="row" style={{ flexWrap: "nowrap" }}>
+              {u.role === "candidate" && u.is_active && (
+                <button className="btn secondary small" onClick={() => void createLink(u)}>
+                  Login link
+                </button>
+              )}
+              {u.id !== me?.id && (
+                <button className="btn secondary small" onClick={() => void toggle(u)}>
+                  {u.is_active ? "Deactivate" : "Reactivate"}
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
